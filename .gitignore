@@ -99,3 +99,17 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# OS X
+.DS_Store
+
+# MagiCircles
+env/
+sukutomo_project/local_settings.py
+sukutomo_project/generated_settings.py
+sukutomo/static/bower
+sukutomo/static/css/style.css
+sukutomo/templates/pages/map.html
+collected/
+db.sqlite3
+sukutomo/static
