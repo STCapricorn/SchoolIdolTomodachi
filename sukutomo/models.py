@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import datetime
 from collections import OrderedDict
 from django.core.validators import MinValueValidator
@@ -8,6 +9,7 @@ from django.utils import timezone
 from magi.utils import PastOnlyValidator
 from magi.abstract_models import BaseAccount
 from magi.item_model import MagiModel, i_choices, getInfoFromChoices
+from magi.models import uploadItem
 from sukutomo.django_translated import t
 
 class Account(BaseAccount):
@@ -93,3 +95,85 @@ class Account(BaseAccount):
             level__gt=self.level,
             i_version=self.i_version,
         ).values('level').distinct().count() + 1
+
+############################################################
+# Idols      
+
+class Idol(MagiModel):
+    collection_name = 'idol'
+
+    owner = models.ForeignKey(User, related_name='added_idols')
+    name = models.CharField(_('Name'), max_length=100, unique=True)
+    japanese_name = models.CharField(string_concat(_('Name'), ' (', t['Japanese'], ')'), max_length=100, null=True)
+    image = models.ImageField(_('Image'), upload_to=uploadItem('i'), null=True)
+
+    ATTRIBUTE_CHOICES = (
+        ('smile', _('Smile')),
+        ('pure', _('Pure')),
+        ('cool', _('Cool')),
+        ('all', _('All')),
+    )
+
+    i_attribute = models.PositiveIntegerField(_('Attribute'), choices=i_choices(ATTRIBUTE_CHOICES), null=True)
+        
+    UNIT_CHOICES = (
+        u'μ\'s',
+        'Aqours',
+    )
+
+    i_unit = models.PositiveIntegerField(_('Unit'), choices=i_choices(UNIT_CHOICES), null=True)
+
+    SUBUNIT_CHOICES = (
+        'Printemps',
+        'Lily White',
+        'BiBi',
+        'CYaRon',
+        'AZALEA',
+        'Guilty Kiss',
+        'Saint Snow',
+        'A-RISE',
+    )
+
+    i_subunit = models.PositiveIntegerField(_('Subunit'), choices=i_choices(SUBUNIT_CHOICES), null=True)
+
+    age = models.PositiveIntegerField(_('Age'), null=True)
+    birthday = models.DateField(_('Birthday'), null=True)
+
+    ASTROLOGICAL_SIGN_CHOICES = (
+        ('leo', _('Leo')),
+        ('aries', _('Aries')),
+        ('libra', _('Libra')),
+        ('virgo', _('Virgo')),
+        ('scorpio', _('Scorpio')),
+        ('capricorn', _('Capricorn')),
+        ('pisces', _('Pisces')),
+        ('gemini', _('Gemini')),
+        ('cancer', _('Cancer')),
+        ('sagittarius', _('Sagittarius')),
+        ('aquarius', _('Aquarius')),
+        ('taurus', _('Taurus')),
+    )
+    
+    i_astrological_sign = models.PositiveIntegerField(_('Astrological sign'), choices=i_choices(ASTROLOGICAL_SIGN_CHOICES), null=True)
+    @property
+    def astrological_sign_image_url(self): return staticImageURL(self.i_astrological_sign, folder='i_astrological_sign', extension='png')
+
+    BLOOD_CHOICES = (
+        'O',
+        'A',
+        'B',
+        'AB',
+    )
+    
+    i_blood = models.PositiveIntegerField(_('Blood'), choices=i_choices(BLOOD_CHOICES), null=True)
+
+    height = models.PositiveIntegerField(_('Height'), null=True, default=None)
+
+    bust = models.PositiveIntegerField(_('Bust'), null=True)
+    waist = models.PositiveIntegerField(_('Waist'), null=True)
+    hips = models.PositiveIntegerField(_('Hips'), null=True)
+
+    hobbies = models.CharField(_('Hobbies'), max_length=100, null=True)
+    favorite_food = models.CharField(_('Favorite food'), max_length=100, null=True)
+    least_favorite_food = models.CharField(_('Least favorite food'), max_length=100, null=True)    
+    description = models.TextField(_('Description'), null=True)
