@@ -32,4 +32,5 @@ class IdolForm(AutoForm):
         optional_fields = ('japanese_name', 'image', 'i_attribute', 'i_unit', 'i_subunit', 'age',
                            'birthday', 'i_astrological_sign', 'i_blood', 'height', 'bust', 'waist', 'hips', 'hobbies',
                            'favorite_food', 'least_favorite_food', 'description')
+        save_owner_on_creation = True
             
