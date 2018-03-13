@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _, string_concat
 from django.db import models
 from django.utils import timezone
-from magi.utils import PastOnlyValidator
+from magi.utils import PastOnlyValidator, staticImageURL
 from magi.abstract_models import BaseAccount
 from magi.item_model import MagiModel, i_choices, getInfoFromChoices
 from magi.models import uploadItem
@@ -115,6 +115,8 @@ class Idol(MagiModel):
     )
 
     i_attribute = models.PositiveIntegerField(_('Attribute'), choices=i_choices(ATTRIBUTE_CHOICES), null=True)
+    @property
+    def attribute_image_url(self): return staticImageURL(self.i_attribute, folder='i_attribute', extension='png')
         
     UNIT_CHOICES = (
         u'μ\'s',

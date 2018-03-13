@@ -1,8 +1,7 @@
-from magi.magicollections import MagiCollection, AccountCollection as _AccountCollection
 from django.utils.translation import ugettext_lazy as _
-from magi.utils import CuteFormType, CuteFormTransform
+from magi.magicollections import MagiCollection, AccountCollection as _AccountCollection
+from magi.utils import staticImageURL, CuteFormType, CuteFormTransform, custom_item_template
 from sukutomo import forms, models
-from magi.utils import staticImageURL
 
 class AccountCollection(_AccountCollection):
     form_class = forms.AccountForm
@@ -33,6 +32,7 @@ class IdolCollection(MagiCollection):
     plural_title = _('Idols')
     multipart = True
     form_class = forms.IdolForm
+    reportable = False
 
     def to_fields(self, view, item, *args, **kwargs):
         # Call the super, provide icons and images
@@ -59,3 +59,7 @@ class IdolCollection(MagiCollection):
                                                        
         return fields
 
+    class ListView(MagiCollection.ListView):
+        item_template = custom_item_template
+        per_line = 6
+        page_size = 18

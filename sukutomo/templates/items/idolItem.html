@@ -1,0 +1,16 @@
+﻿{% with idol=item %}
+<div style="font-size:1.2em;text-align: center;vertical-align:center;">
+  <a href="{{ idol.item_url }}" data-ajax-url="{{ idol.ajax_item_url }}" data-ajax-title="{{ idol }}" class="idol">
+    {% if idol.image %}
+    <img src="{{ idol.image_url }}" alt="{{ idol }}" />
+    <br />
+    {% endif %}
+    {% if idol.attribute %}
+    <img src="{{ idol.attribute_image_url }}" height="10%" width="10%" />
+    {% endif %}
+    <span>
+      {{ idol.name }}
+    </span>
+  </a>
+</div>
+{% endwith %}
