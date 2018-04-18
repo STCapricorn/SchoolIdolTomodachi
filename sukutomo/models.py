@@ -3,9 +3,10 @@ import datetime
 from collections import OrderedDict
 from django.core.validators import MinValueValidator
 from django.contrib.auth.models import User
-from django.utils.translation import ugettext_lazy as _, string_concat
+from django.utils.translation import ugettext_lazy as _, string_concat, get_language
 from django.db import models
 from django.utils import timezone
+from django.conf import settings as django_settings
 from magi.utils import PastOnlyValidator, staticImageURL
 from magi.abstract_models import BaseAccount
 from magi.item_model import MagiModel, i_choices, getInfoFromChoices
@@ -37,11 +38,11 @@ class Account(BaseAccount):
     show_friend_id = models.BooleanField(_('Should your friend ID be visible to other players?'), default=True)
     accept_friend_requests = models.NullBooleanField(_('Accept friend requests'), null=True)
     device = models.CharField(_('Device'), help_text=_('The model of your device. Example: Nexus 5, iPhone 4, iPad 2, ...'), max_length=150, null=True)
-    loveca = models.PositiveIntegerField(_('Love gems'), help_text=string_concat(_('Number of {} you currently have in your account.').format(_('Love gems')), ' ', _('This field is completely optional, it\'s here to help you manage your accounts.')), default=0)
-    friend_points = models.PositiveIntegerField(_('Friend Points'), help_text=string_concat(_('Number of {} you currently have in your account.').format(_('Friend Points')), ' ', _('This field is completely optional, it\'s here to help you manage your accounts.')), default=0)
-    g = models.PositiveIntegerField('G', help_text=string_concat(_('Number of {} you currently have in your account.').format('G'), ' ', _('This field is completely optional, it\'s here to help you manage your accounts.')), default=0)
-    tickets = models.PositiveIntegerField('Scouting Tickets', help_text=string_concat(_('Number of {} you currently have in your account.').format('Scouting Tickets'), ' ', _('This field is completely optional, it\'s here to help you manage your accounts.')), default=0)
-    vouchers = models.PositiveIntegerField('Vouchers (blue tickets)', help_text=string_concat(_('Number of {} you currently have in your account.').format('Vouchers (blue tickets)'), ' ', _('This field is completely optional, it\'s here to help you manage your accounts.')), default=0)
+    loveca = models.PositiveIntegerField(_('Love gems'), help_text=string_concat(_('Number of {} you currently have in your account.').format(_('Love gems')), ' ', _('This field is completely optional, it\'s here to help you manage your accounts.')), null=True)
+    friend_points = models.PositiveIntegerField(_('Friend Points'), help_text=string_concat(_('Number of {} you currently have in your account.').format(_('Friend Points')), ' ', _('This field is completely optional, it\'s here to help you manage your accounts.')), null=True)
+    g = models.PositiveIntegerField('G', help_text=string_concat(_('Number of {} you currently have in your account.').format('G'), ' ', _('This field is completely optional, it\'s here to help you manage your accounts.')), null=True)
+    tickets = models.PositiveIntegerField('Scouting Tickets', help_text=string_concat(_('Number of {} you currently have in your account.').format('Scouting Tickets'), ' ', _('This field is completely optional, it\'s here to help you manage your accounts.')), null=True)
+    vouchers = models.PositiveIntegerField('Vouchers (blue tickets)', help_text=string_concat(_('Number of {} you currently have in your account.').format('Vouchers (blue tickets)'), ' ', _('This field is completely optional, it\'s here to help you manage your accounts.')), null=True)
     bought_loveca = models.PositiveIntegerField(_('Total love gems bought'), help_text=_('You can calculate that number in "Other" then "Purchase History".'), null=True)
     show_items = models.BooleanField('', default=True, help_text=_('Should your items be visible to other players?'))
 
@@ -97,13 +98,26 @@ class Account(BaseAccount):
         ).values('level').distinct().count() + 1
 
 ############################################################
-# Idols      
+# Idols
+
+LANGUAGES_NEED_OWN_NAME = [ l for l in django_settings.LANGUAGES if l[0] in ['ru', 'zh-hans', 'zh-hant', 'kr'] ]
+ALL_ALT_LANGUAGES = [ l for l in django_settings.LANGUAGES if l[0] != 'en' ]
 
 class Idol(MagiModel):
     collection_name = 'idol'
 
     owner = models.ForeignKey(User, related_name='added_idols')
     name = models.CharField(_('Name'), max_length=100, unique=True)
+
+    NAMES_CHOICES = LANGUAGES_NEED_OWN_NAME
+    d_names = models.TextField(null=True)
+
+    @property
+    def t_name(self):
+        if get_language() == 'ja':
+            return self.japanese_name
+        return self.names.get(get_language(), self.name)
+    
     japanese_name = models.CharField(string_concat(_('Name'), ' (', t['Japanese'], ')'), max_length=100, null=True)
     image = models.ImageField(_('Image'), upload_to=uploadItem('i'), null=True)
 
@@ -138,6 +152,28 @@ class Idol(MagiModel):
 
     i_subunit = models.PositiveIntegerField(_('Subunit'), choices=i_choices(SUBUNIT_CHOICES), null=True)
 
+    SCHOOL_CHOICES = [
+        ('chitose', _('Chitose Bridge High School')),
+        ('seiran', _('Seiran High School')),
+        ('shinonome', _('Shinonome Academy')),
+        ('shion', _('Shion Girls\' Academy')),
+        ('touou', _('Touou Academy')),
+        ('yg', _('Y.G. International Academy')),
+        ('nijigasaki', _('Nijigasaki High School')),
+        ('uranohoshi', _('Uranohoshi Girls\' High School')),
+        ('otonokizaka', _('Otonokizaka Academy')),
+    ]
+
+    i_school = models.PositiveIntegerField(_('School'), choices=i_choices(SCHOOL_CHOICES), null=True)
+
+    YEAR_CHOICES = [
+        ('first', _('1st Year')),
+        ('second', _('2nd Year')),
+        ('third', _('3rd Year')),
+    ]
+
+    i_year = models.PositiveIntegerField(_('School year'), choices=i_choices(YEAR_CHOICES), null=True)
+
     age = models.PositiveIntegerField(_('Age'), null=True)
     birthday = models.DateField(_('Birthday'), null=True)
 
@@ -167,15 +203,36 @@ class Idol(MagiModel):
         'AB',
     )
     
-    i_blood = models.PositiveIntegerField(_('Blood'), choices=i_choices(BLOOD_CHOICES), null=True)
+    i_blood = models.PositiveIntegerField(_('Blood type'), choices=i_choices(BLOOD_CHOICES), null=True)
+
+    MEASUREMENT_DETAILS = [
+        ('height', _('Height')),
+        ('bust', _('Bust')),
+        ('waist', _('Waist')),
+        ('hips', _('Hips')),
+    ]
 
     height = models.PositiveIntegerField(_('Height'), null=True, default=None)
-
     bust = models.PositiveIntegerField(_('Bust'), null=True)
     waist = models.PositiveIntegerField(_('Waist'), null=True)
     hips = models.PositiveIntegerField(_('Hips'), null=True)
 
     hobbies = models.CharField(_('Hobbies'), max_length=100, null=True)
+
+    HOBBIESS_CHOICES = ALL_ALT_LANGUAGES
+    d_hobbiess = models.TextField(null=True)
+
     favorite_food = models.CharField(_('Favorite food'), max_length=100, null=True)
-    least_favorite_food = models.CharField(_('Least favorite food'), max_length=100, null=True)    
+
+    FAVORITE_FOODS_CHOICES = ALL_ALT_LANGUAGES
+    d_favorite_foods = models.TextField(null=True)
+    
+    least_favorite_food = models.CharField(_('Least favorite food'), max_length=100, null=True)
+
+    LEAST_FAVORITE_FOODS_CHOICES = ALL_ALT_LANGUAGES
+    d_least_favorite_foods = models.TextField(null=True)
+    
     description = models.TextField(_('Description'), null=True)
+
+    DESCRIPTIONS_CHOICES = ALL_ALT_LANGUAGES
+    d_descriptions = models.TextField(null=True)

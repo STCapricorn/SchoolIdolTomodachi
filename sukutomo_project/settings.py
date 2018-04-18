@@ -76,7 +76,6 @@ DATABASES = {
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.7/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
@@ -104,10 +103,18 @@ from django.utils.translation import ugettext_lazy as _
 LANGUAGES = (
     ('en', _('English')),
     ('es', _('Spanish')),
+    ('zh-hans', _('Simplified Chinese')),
+    ('ru', _('Russian')),
+    ('it', _('Italian')),
     ('fr', _('French')),
     ('de', _('German')),
-    ('it', _('Italian')),
-    ('ru', _('Russian')),
+    ('pl', _('Polish')),
+    ('ja', _('Japanese')),
+    ('kr', _('Korean')),
+    ('id', _('Indonesian')),
+    ('zh-hant', _('Traditional Chinese')),
+    ('pt-br', _('Brazilian Portuguese')),
+    ('tr', _('Turkish')),
 )
 
 LANGUAGE_CODE = 'en'
