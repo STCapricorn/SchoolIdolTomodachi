@@ -135,17 +135,17 @@ class IdolCollection(MagiCollection):
             order = ['image', 'name', 'japanese_name', 'attribute', 'unit', 'subunit', 'school', 'year',
                      'astrological_sign', 'birthday', 'age', 'blood', 'measurements', 'hobbies', 'favorite_food',
                      'least_favorite_food', 'description'] + order
-        
+
             fields = super(IdolCollection.ItemView, self).to_fields(item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)
 
             if item.birthday is not None:
                 if item.astrological_sign is not None:
                     setSubField(fields, 'birthday', key='icon', value=None)
                     setSubField(fields, 'birthday', key='image', value=staticImageURL(item.i_astrological_sign, folder='i_astrological_sign', extension='png'))
-                if item.age is not None:                
+                if item.age is not None:
                     setSubField(fields, 'birthday', key='type', value='title_text')
                     setSubField(fields, 'birthday', key='title', value=lambda f: dateformat.format(item.birthday, "F d"))
-                    setSubField(fields, 'birthday', key='value', value=_(' {age} years old').format(age=item.age))
+                    setSubField(fields, 'birthday', key='value', value=_('{age} years old').format(age=item.age))
                 else:
                     setSubField(fields, 'birthday', key='type', value='text')
                     setSubField(fields, 'birthday', key='value', value=lambda f: dateformat.format(item.birthday, "F d"))

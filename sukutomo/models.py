@@ -7,7 +7,7 @@ from django.utils.translation import ugettext_lazy as _, string_concat, get_lang
 from django.db import models
 from django.utils import timezone
 from django.conf import settings as django_settings
-from magi.utils import PastOnlyValidator, staticImageURL
+from magi.utils import PastOnlyValidator, staticImageURL, ordinalNumber
 from magi.abstract_models import BaseAccount
 from magi.item_model import MagiModel, i_choices, getInfoFromChoices
 from magi.models import uploadItem
@@ -167,9 +167,10 @@ class Idol(MagiModel):
     i_school = models.PositiveIntegerField(_('School'), choices=i_choices(SCHOOL_CHOICES), null=True)
 
     YEAR_CHOICES = [
-        ('first', _('1st Year')),
-        ('second', _('2nd Year')),
-        ('third', _('3rd Year')),
+        # Needs to be re-translated before being displayed
+        ('first', _(u'{nth} year').format(nth=_(ordinalNumber(1)))),
+        ('second', _(u'{nth} year').format(nth=_(ordinalNumber(2)))),
+        ('third', _(u'{nth} year').format(nth=_(ordinalNumber(3)))),
     ]
 
     i_year = models.PositiveIntegerField(_('School year'), choices=i_choices(YEAR_CHOICES), null=True)
@@ -225,13 +226,13 @@ class Idol(MagiModel):
     favorite_food = models.CharField(_('Favorite food'), max_length=100, null=True)
 
     FAVORITE_FOODS_CHOICES = ALL_ALT_LANGUAGES
-    d_favorite_foods = models.TextField(null=True)
-    
+    d_favorite_foods = models.TextField(_('Favorite food'), null=True)
+
     least_favorite_food = models.CharField(_('Least favorite food'), max_length=100, null=True)
 
     LEAST_FAVORITE_FOODS_CHOICES = ALL_ALT_LANGUAGES
     d_least_favorite_foods = models.TextField(null=True)
-    
+
     description = models.TextField(_('Description'), null=True)
 
     DESCRIPTIONS_CHOICES = ALL_ALT_LANGUAGES
