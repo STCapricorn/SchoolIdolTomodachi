@@ -46,4 +46,25 @@ class IdolFilterForm(MagiFiltersForm):
         model = models.Idol
         fields = ('search', 'i_attribute', 'i_unit', 'i_subunit', 'i_school', 'i_year', 'i_astrological_sign', 'i_blood')
 
-            
+class EventForm(AutoForm):
+    start_date = forms.forms.DateField(label=_('Beginning'), required=False)
+    end_date = forms.forms.DateField(label=_('End'), required=False)
+
+    jp_start_date = forms.forms.DateField(label=string_concat(_('Japanese version'), ' - ', _('Beginning')), required=False)
+    jp_end_date = forms.forms.DateField(label=string_concat(_('Japanese version'), ' - ', _('End')), required=False)
+
+    ww_start_date = forms.forms.DateField(label=string_concat(_('English version'), ' - ', _('Beginning')), required=False)
+    ww_end_date = forms.forms.DateField(label=string_concat(_('English version'), ' - ', _('End')), required=False)
+
+    tw_start_date = forms.forms.DateField(label=string_concat(_('Taiwanese version'), ' - ', _('Beginning')), required=False)
+    tw_end_date = forms.forms.DateField(label=string_concat(_('Taiwanese version'), ' - ', _('End')), required=False)
+
+    kr_start_date = forms.forms.DateField(label=string_concat(_('Korean version'), ' - ', _('Beginning')), required=False)
+    kr_end_date = forms.forms.DateField(label=string_concat(_('Korean version'), ' - ', _('End')), required=False)
+
+    cn_start_date = forms.forms.DateField(label=string_concat(_('Chinese version'), ' - ', _('Beginning')), required=False)
+    cn_end_date = forms.forms.DateField(label=string_concat(_('Chinese version'), ' - ', _('End')), required=False)
+
+    class Meta:
+        model = models.Event
+        save_owner_on_creation = True

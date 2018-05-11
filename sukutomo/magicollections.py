@@ -84,6 +84,7 @@ class IdolCollection(MagiCollection):
     multipart = True
     form_class = forms.IdolForm
     reportable = False
+    blockable = False
     translated_fields = ('name', 'hobbies', 'favorite_food', 'least_favorite_food', 'description', )
     icon = 'idolized'
 
@@ -181,3 +182,49 @@ class IdolCollection(MagiCollection):
     class EditView(MagiCollection.EditView):
         staff_required = True
         permissions_required = ['manage_main_items']
+
+############################################################
+# Events Collection
+
+EVENTS_ICONS = {
+    'title': 'id', 'jp_title': 'id',
+    'ww_title': 'id', 'tw_title': 'id',
+    'kr_title': 'id', 'cn_title': 'id',
+    'start_date': 'date', 'end_date': 'date',
+    'jp_start_date': 'date', 'jp_end_date': 'date',
+    'ww_start_date': 'date', 'ww_end_date': 'date',
+    'tw_start_date': 'date', 'tw_end_date': 'date',
+    'kr_start_date': 'date', 'kr_end_date': 'date',
+    'cn_start_date': 'date', 'cn_end_date': 'date',
+    'type': 'toggler',
+}
+
+class EventCollection(MagiCollection):
+    queryset = models.Event.objects.all()
+    title = _('Event')
+    plural_title = _('Events')
+    multipart = True
+    form_class = forms.EventForm
+    reportable = False
+    blockable = False
+    translated_fields = ('title', )
+    icon = 'event'
+    filter_cuteform = {
+        'i_unit': {
+        },
+        'version': {
+            'to_cuteform': lambda k, v: EventCollection._version_images[k],
+            'image_folder': 'language',
+            'transform': CuteFormTransform.ImagePath,
+        },
+    }
+
+    def to_fields(self, view, item, *args, **kwargs):
+        
+        fields = super(EventCollection, self).to_fields(view, item, *args, icons=EVENTS_ICONS,  images={
+                'unit': staticImageURL(item.i_unit, folder='i_unit', extension='png'),
+        }, **kwargs)
+
+        return fields
+    
+

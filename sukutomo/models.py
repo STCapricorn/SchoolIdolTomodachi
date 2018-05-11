@@ -30,6 +30,7 @@ class Account(BaseAccount):
         ('CN', { 'translation': t['Chinese'], 'icon': 'CN' }),
         ('TW', { 'translation': t['Taiwanese'], 'icon': 'TW' }),
     ))
+    
     VERSION_CHOICES = [(name, info['translation']) for name, info in VERSIONS.items()]
     i_version = models.PositiveIntegerField(_('Version'), choices=i_choices(VERSION_CHOICES), default=1)
     version_icon = property(getInfoFromChoices('version', VERSIONS, 'icon'))
@@ -237,3 +238,78 @@ class Idol(MagiModel):
 
     DESCRIPTIONS_CHOICES = ALL_ALT_LANGUAGES
     d_descriptions = models.TextField(null=True)
+
+############################################################
+# Events
+
+class Event(MagiModel):
+    collection_name = 'event'
+    owner = models.ForeignKey(User, related_name='added_events')
+
+    title = models.CharField(_('Title'), max_length=100)
+    TITLES_CHOICES = ALL_ALT_LANGUAGES
+    d_titles = models.TextField(null=True)
+
+    banner = models.ImageField(_('Banner'), null=True)
+
+    TYPE_CHOICES = (
+        ('token', _('Token')),
+        ('sm', _('Score Match')),
+        ('mf', _('Medley Festival')),
+        ('cf', _('Challenge Festival')),
+        ('as', _('Adventure Stroll')),
+        ('fm', _('Friendly Match')),
+    )
+    
+    i_type = models.PositiveIntegerField(_('Event type'), choices=i_choices(TYPE_CHOICES), null=True)
+
+    UNIT_CHOICES = (
+        u'μ\'s',
+        'Aqours',
+    )
+
+    i_unit = models.PositiveIntegerField(_('Unit'), choices=i_choices(UNIT_CHOICES), null=True)
+
+    FIELDS_PER_VERSION = ['banner', 'countdown', 'start_date', 'end_date']
+
+    VERSIONS_CHOICES = Account.VERSION_CHOICES
+    c_versions = models.TextField(_('Server availability'), blank=True, null=True, default='"JP"')
+
+    jp_banner = models.ImageField(string_concat(t['Japanese'], ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
+    jp_start_date = models.DateTimeField(string_concat(t['Japanese'], ' ', _('version'), ' - ', _('Beginning')), null=True)
+    jp_end_date = models.DateTimeField(string_concat(t['Japanese'], ' ', _('version'), ' - ',_('End')), null=True)
+
+    ww_banner = models.ImageField(string_concat(_('Worldwide'), ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
+    ww_start_date = models.DateTimeField(string_concat(_('Worldwide'), ' ', _('version'), ' - ', _('Beginning')), null=True)
+    ww_end_date = models.DateTimeField(string_concat(_('Worldwide'), ' ', _('version'), ' - ',_('End')), null=True)
+
+    tw_banner = models.ImageField(string_concat(_('Taiwanese'), ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
+    tw_start_date = models.DateTimeField(string_concat(_('Taiwanese'), ' ', _('version'), ' - ', _('Beginning')), null=True)
+    tw_end_date = models.DateTimeField(string_concat(_('Taiwanese'), ' ', _('version'), ' - ',_('End')), null=True)
+
+    kr_banner = models.ImageField(string_concat(_('Korean'), ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
+    kr_start_date = models.DateTimeField(string_concat(_('Korean'), ' ', _('version'), ' - ', _('Beginning')), null=True)
+    kr_end_date = models.DateTimeField(string_concat(_('Korean'), ' ', _('version'), ' - ',_('End')), null=True)
+
+    cn_banner = models.ImageField(string_concat(_('Chinese'), ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
+    cn_start_date = models.DateTimeField(string_concat(_('Chinese'), ' ', _('version'), ' - ', _('Beginning')), null=True)
+    cn_end_date = models.DateTimeField(string_concat(_('Chinese'), ' ', _('version'), ' - ',_('End')), null=True)
+
+    def get_status(self, version='JP'):
+        start_date = getattr(self, u'{}start_date'.format(Account.VERSIONS_CHOICES[name]))
+        end_date = getattr(self, u'{}end_date'.format(Account.VERSIONS_CHOICES[name]))
+        if not end_date or not start_date:
+            return None
+        now = timezone.now()
+        if now > end_date:
+            return 'ended'
+        elif now > start_date:
+            return 'current'
+        return 'future'
+
+    jp_status = property(lambda _s: _s.get_status())
+    ww_status = property(lambda _s: _s.get_status(version='EN'))
+    tw_status = property(lambda _s: _s.get_status(version='TW'))
+    kr_status = property(lambda _s: _s.get_status(version='KR'))
+    cn_status = property(lambda _s: _s.get_status(version='CN'))
+
