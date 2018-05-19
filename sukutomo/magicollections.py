@@ -2,8 +2,9 @@
 from django.utils.translation import ugettext_lazy as _, get_language
 from django.utils.formats import dateformat
 from django.utils.safestring import mark_safe
+from django.utils.translation import string_concat
 from magi.magicollections import MagiCollection, AccountCollection as _AccountCollection
-from magi.utils import staticImageURL, CuteFormType, CuteFormTransform, custom_item_template
+from magi.utils import staticImageURL, CuteFormType, CuteFormTransform, custom_item_template, torfc2822
 from magi.utils import setSubField
 from sukutomo import forms, models
 
@@ -35,7 +36,7 @@ class AccountCollection(_AccountCollection):
 
 ############################################################
 # Idols Collection
-    
+
 IDOLS_ICONS = {
     'name': 'id',
     'japanese_name': 'id',
@@ -89,7 +90,7 @@ class IdolCollection(MagiCollection):
     icon = 'idolized'
 
     def to_fields(self, view, item, *args, **kwargs):
-        
+
         fields = super(IdolCollection, self).to_fields(view, item, *args, icons=IDOLS_ICONS,  images={
                 'attribute': staticImageURL(item.i_attribute, folder='i_attribute', extension='png'),
                 'unit': staticImageURL(item.i_unit, folder='i_unit', extension='png'),
@@ -99,10 +100,10 @@ class IdolCollection(MagiCollection):
 
         if item.japanese_name is not None and get_language() == 'ja':
             setSubField(fields, 'name', key='value', value=item.japanese_name)
-        
+
         setSubField(fields, 'birthday', key='type', value='text')
         setSubField(fields, 'birthday', key='value', value=lambda f: dateformat.format(item.birthday, "F d"))
-        
+
         return fields
 
     filter_cuteform = IDOLS_CUTEFORM
@@ -115,7 +116,7 @@ class IdolCollection(MagiCollection):
             if order is None: order = []
 
             values = []
-            for fieldName, verbose_name in models.Idol.MEASUREMENT_DETAILS: 
+            for fieldName, verbose_name in models.Idol.MEASUREMENT_DETAILS:
                 value = getattr(item, fieldName)
                 exclude_fields.append(fieldName)
                 if value:
@@ -157,7 +158,7 @@ class IdolCollection(MagiCollection):
                     setSubField(fields, 'school', key='value', value='{}'.format(unicode(item.t_year)))
 
             setSubField(fields, 'description', key='type', value='long_text')
-        
+
             if item.japanese_name is not None:
                 if get_language() == 'ja':
                     setSubField(fields, 'name', key='value', value=item.japanese_name)
@@ -165,7 +166,7 @@ class IdolCollection(MagiCollection):
                     setSubField(fields, 'name', key='type', value='title_text')
                     setSubField(fields, 'name', key='title', value=item.name)
                     setSubField(fields, 'name', key='value', value=item.japanese_name)
-        
+
             return fields
 
     class ListView(MagiCollection.ListView):
@@ -186,11 +187,17 @@ class IdolCollection(MagiCollection):
 ############################################################
 # Events Collection
 
+EVENT_FIELDS_PER_VERSION = ['banner', 'countdown', 'start_date', 'end_date'] 
+
+EVENT_ITEM_FIELDS_ORDER = [
+    'banner', 'title', 'type', 'unit',
+] + [
+    u'{}{}'.format(_v['prefix'], _f) for _v in models.Account.VERSIONS.values()
+    for _f in EVENT_FIELDS_PER_VERSION
+]
+
 EVENTS_ICONS = {
-    'title': 'id', 'jp_title': 'id',
-    'ww_title': 'id', 'tw_title': 'id',
-    'kr_title': 'id', 'cn_title': 'id',
-    'start_date': 'date', 'end_date': 'date',
+    'title': 'id',
     'jp_start_date': 'date', 'jp_end_date': 'date',
     'ww_start_date': 'date', 'ww_end_date': 'date',
     'tw_start_date': 'date', 'tw_end_date': 'date',
@@ -220,11 +227,55 @@ class EventCollection(MagiCollection):
     }
 
     def to_fields(self, view, item, *args, **kwargs):
-        
+
         fields = super(EventCollection, self).to_fields(view, item, *args, icons=EVENTS_ICONS,  images={
                 'unit': staticImageURL(item.i_unit, folder='i_unit', extension='png'),
         }, **kwargs)
 
-        return fields
-    
+        setSubField(fields, 'jp_start_date', key='timezones', value=['Asia/Tokyo', 'Local time'])
+        setSubField(fields, 'jp_end_date', key='timezones', value=['Asia/Tokyo', 'Local time'])
 
+        setSubField(fields, 'ww_start_date', key='timezones', value=['UTC', 'Local time'])
+        setSubField(fields, 'ww_end_date', key='timezones', value=['UTC', 'Local time'])
+
+        setSubField(fields, 'tw_start_date', key='timezones', value=['Asia/Taipei', 'Local time'])
+        setSubField(fields, 'tw_end_date', key='timezones', value=['Asia/Taipei', 'Local time'])
+
+        setSubField(fields, 'kr_start_date', key='timezones', value=['Asia/Seoul', 'Local time'])
+        setSubField(fields, 'kr_end_date', key='timezones', value=['Asia/Seoul', 'Local time'])
+
+        setSubField(fields, 'cn_start_date', key='timezones', value=['UTC', 'Local time'])
+        setSubField(fields, 'cn_end_date', key='timezones', value=['UTC', 'Local time'])
+
+        return fields
+
+    class ItemView(MagiCollection.ItemView):
+
+        def to_fields(self, item, order=None, extra_fields=None, exclude_fields=None, *args, **kwargs):
+            if extra_fields is None: extra_fields = []
+            if exclude_fields is None: exclude_fields = []
+            if order is None: order = []
+            exclude_fields.append('c_versions')
+            for version, version_details in models.Account.VERSIONS.items():
+                status = getattr(item, u'{}status'.format(version_details['prefix']))
+                if status and status != 'ended':
+                    start_date = getattr(item, u'{}start_date'.format(version_details['prefix']))
+                    end_date = getattr(item, u'{}end_date'.format(version_details['prefix']))
+                    extra_fields += [
+                        (u'{}countdown'.format(version_details['prefix']), {
+                            'verbose_name': string_concat(version_details['translation'], ' ',  _('version'), ' - ', _('Countdown')),
+                            'value': mark_safe(u'<span class="fontx1-5 countdown" data-date="{date}" data-format="{sentence}"></h4>').format(
+                                date=torfc2822(end_date if status == 'current' else start_date),
+                                sentence=_('{time} left') if status == 'current' else _('Starts in {time}'),
+                            ),
+                            'icon': 'times',
+                            'type': 'html',
+                        }),
+            ]
+            exclude_fields.append('start_date')
+            exclude_fields.append('end_date')
+            order = EVENT_ITEM_FIELDS_ORDER + order
+            fields = super(EventCollection.ItemView, self).to_fields(
+                item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)
+
+            return fields

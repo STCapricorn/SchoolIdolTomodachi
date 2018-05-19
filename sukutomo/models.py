@@ -24,13 +24,13 @@ class Account(BaseAccount):
     # Details
 
     VERSIONS = OrderedDict((
-        ('JP', { 'translation': t['Japanese'], 'icon': 'JP' }),
-        ('WW', { 'translation': _('Worldwide'), 'icon': 'world' }),
-        ('KR', { 'translation': t['Korean'], 'icon': 'KR' }),
-        ('CN', { 'translation': t['Chinese'], 'icon': 'CN' }),
-        ('TW', { 'translation': t['Taiwanese'], 'icon': 'TW' }),
+        ('JP', { 'translation': _('Japanese version'), 'icon': 'JP', 'prefix': 'jp_' }),
+        ('WW', { 'translation': _('Worldwide version'), 'icon': 'world', 'prefix': 'ww_' }),
+        ('KR', { 'translation': _('Korean version'), 'icon': 'KR', 'prefix': 'kr_' }),
+        ('CN', { 'translation': _('Chinese version'), 'icon': 'CN', 'prefix': 'cn_' }),
+        ('TW', { 'translation': _('Taiwanese version'), 'icon': 'TW', 'prefix': 'tw_' }),
     ))
-    
+
     VERSION_CHOICES = [(name, info['translation']) for name, info in VERSIONS.items()]
     i_version = models.PositiveIntegerField(_('Version'), choices=i_choices(VERSION_CHOICES), default=1)
     version_icon = property(getInfoFromChoices('version', VERSIONS, 'icon'))
@@ -118,7 +118,7 @@ class Idol(MagiModel):
         if get_language() == 'ja':
             return self.japanese_name
         return self.names.get(get_language(), self.name)
-    
+
     japanese_name = models.CharField(string_concat(_('Name'), ' (', t['Japanese'], ')'), max_length=100, null=True)
     image = models.ImageField(_('Image'), upload_to=uploadItem('i'), null=True)
 
@@ -132,7 +132,7 @@ class Idol(MagiModel):
     i_attribute = models.PositiveIntegerField(_('Attribute'), choices=i_choices(ATTRIBUTE_CHOICES), null=True)
     @property
     def attribute_image_url(self): return staticImageURL(self.i_attribute, folder='i_attribute', extension='png')
-        
+
     UNIT_CHOICES = (
         u'μ\'s',
         'Aqours',
@@ -193,7 +193,7 @@ class Idol(MagiModel):
         ('aquarius', _('Aquarius')),
         ('taurus', _('Taurus')),
     )
-    
+
     i_astrological_sign = models.PositiveIntegerField(_('Astrological sign'), choices=i_choices(ASTROLOGICAL_SIGN_CHOICES), null=True)
     @property
     def astrological_sign_image_url(self): return staticImageURL(self.i_astrological_sign, folder='i_astrological_sign', extension='png')
@@ -204,7 +204,7 @@ class Idol(MagiModel):
         'B',
         'AB',
     )
-    
+
     i_blood = models.PositiveIntegerField(_('Blood type'), choices=i_choices(BLOOD_CHOICES), null=True)
 
     MEASUREMENT_DETAILS = [
@@ -260,7 +260,7 @@ class Event(MagiModel):
         ('as', _('Adventure Stroll')),
         ('fm', _('Friendly Match')),
     )
-    
+
     i_type = models.PositiveIntegerField(_('Event type'), choices=i_choices(TYPE_CHOICES), null=True)
 
     UNIT_CHOICES = (
@@ -269,8 +269,6 @@ class Event(MagiModel):
     )
 
     i_unit = models.PositiveIntegerField(_('Unit'), choices=i_choices(UNIT_CHOICES), null=True)
-
-    FIELDS_PER_VERSION = ['banner', 'countdown', 'start_date', 'end_date']
 
     VERSIONS_CHOICES = Account.VERSION_CHOICES
     c_versions = models.TextField(_('Server availability'), blank=True, null=True, default='"JP"')
@@ -296,8 +294,8 @@ class Event(MagiModel):
     cn_end_date = models.DateTimeField(string_concat(_('Chinese'), ' ', _('version'), ' - ',_('End')), null=True)
 
     def get_status(self, version='JP'):
-        start_date = getattr(self, u'{}start_date'.format(Account.VERSIONS_CHOICES[name]))
-        end_date = getattr(self, u'{}end_date'.format(Account.VERSIONS_CHOICES[name]))
+        start_date = getattr(self, u'{}start_date'.format(Account.VERSIONS[version]['prefix']))
+        end_date = getattr(self, u'{}end_date'.format(Account.VERSIONS[version]['prefix']))
         if not end_date or not start_date:
             return None
         now = timezone.now()
@@ -308,8 +306,7 @@ class Event(MagiModel):
         return 'future'
 
     jp_status = property(lambda _s: _s.get_status())
-    ww_status = property(lambda _s: _s.get_status(version='EN'))
+    ww_status = property(lambda _s: _s.get_status(version='WW'))
     tw_status = property(lambda _s: _s.get_status(version='TW'))
     kr_status = property(lambda _s: _s.get_status(version='KR'))
     cn_status = property(lambda _s: _s.get_status(version='CN'))
-
