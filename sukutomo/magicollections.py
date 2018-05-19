@@ -23,8 +23,9 @@ class AccountCollection(_AccountCollection):
             'transform': CuteFormTransform.FlaticonWithText,
         },
         'i_version': {
-            'to_cuteform': lambda k, v: models.Account.VERSIONS[models.Account.get_reverse_i('version', k)]['icon'],
-            'transform': CuteFormTransform.FlaticonWithText,
+            'to_cuteform': lambda k, v: models.Account.VERSIONS[models.Account.get_reverse_i('version', k)]['image'],
+            'image_folder': 'language',
+            'transform': CuteFormTransform.ImagePath,
         },
         'i_os': {
             'transform': CuteFormTransform.FlaticonWithText,
@@ -216,6 +217,9 @@ class EventCollection(MagiCollection):
     blockable = False
     translated_fields = ('title', )
     icon = 'event'
+
+    _version_images = { k: v['image'] for k, v in models.Account.VERSIONS.items() }
+    
     filter_cuteform = {
         'i_unit': {
         },
@@ -250,7 +254,8 @@ class EventCollection(MagiCollection):
         return fields
 
     class ItemView(MagiCollection.ItemView):
-
+        filter_form=forms.EventFilterForm
+      
         def to_fields(self, item, order=None, extra_fields=None, exclude_fields=None, *args, **kwargs):
             if extra_fields is None: extra_fields = []
             if exclude_fields is None: exclude_fields = []

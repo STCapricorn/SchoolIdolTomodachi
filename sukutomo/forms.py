@@ -1,9 +1,10 @@
 import datetime
 from magi import forms
 from django.core.validators import MinValueValidator
+from django.db.models.fields import BLANK_CHOICE_DASH
 from django.utils.translation import ugettext_lazy as _, string_concat
 from magi.utils import PastOnlyValidator
-from magi.forms import AutoForm, MagiFiltersForm
+from magi.forms import AutoForm, MagiFiltersForm, MagiFilter
 from sukutomo import models
 from sukutomo.django_translated import t
 
@@ -47,14 +48,12 @@ class IdolFilterForm(MagiFiltersForm):
         fields = ('search', 'i_attribute', 'i_unit', 'i_subunit', 'i_school', 'i_year', 'i_astrological_sign', 'i_blood')
 
 class EventForm(AutoForm):
-    start_date = forms.forms.DateField(label=_('Beginning'), required=False)
-    end_date = forms.forms.DateField(label=_('End'), required=False)
 
     jp_start_date = forms.forms.DateField(label=string_concat(_('Japanese version'), ' - ', _('Beginning')), required=False)
     jp_end_date = forms.forms.DateField(label=string_concat(_('Japanese version'), ' - ', _('End')), required=False)
 
-    ww_start_date = forms.forms.DateField(label=string_concat(_('English version'), ' - ', _('Beginning')), required=False)
-    ww_end_date = forms.forms.DateField(label=string_concat(_('English version'), ' - ', _('End')), required=False)
+    ww_start_date = forms.forms.DateField(label=string_concat(_('Worldwide version'), ' - ', _('Beginning')), required=False)
+    ww_end_date = forms.forms.DateField(label=string_concat(_('Worldwide version'), ' - ', _('End')), required=False)
 
     tw_start_date = forms.forms.DateField(label=string_concat(_('Taiwanese version'), ' - ', _('Beginning')), required=False)
     tw_end_date = forms.forms.DateField(label=string_concat(_('Taiwanese version'), ' - ', _('End')), required=False)
@@ -68,3 +67,23 @@ class EventForm(AutoForm):
     class Meta:
         model = models.Event
         save_owner_on_creation = True
+
+class EventFilterForm(MagiFiltersForm):
+    search_fields = ['title', 'd_titles']
+
+    ordering_fields = [
+        ('jp_start_date', string_concat(_('Date'), ' (', _('Japanese version'), ')')),
+        ('ww_start_date', string_concat(_('Date'), ' (', _('Worldwide version'), ')')),
+        ('tw_start_date', string_concat(_('Date'), ' (', _('Taiwanese version'), ')')),
+        ('kr_start_date', string_concat(_('Date'), ' (', _('Korean version'), ')')),
+        ('cn_start_date', string_concat(_('Date'), ' (', _('Chinese version'), ')')),
+        ('title', _('Title')),
+    ]
+
+    version = forms.forms.ChoiceField(label=_(u'Server availability'), choices=BLANK_CHOICE_DASH + models.Account.VERSION_CHOICES)
+    version_filter = MagiFilter(to_queryset=lambda form, queryset, request, value: queryset.filter(c_versions__contains=u'"{}"'.format(value)))
+
+    class Meta:
+        model = models.Event
+        fields = ('search', 'i_type', 'i_unit', 'version')
+

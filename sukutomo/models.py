@@ -24,16 +24,16 @@ class Account(BaseAccount):
     # Details
 
     VERSIONS = OrderedDict((
-        ('JP', { 'translation': _('Japanese version'), 'icon': 'JP', 'prefix': 'jp_' }),
-        ('WW', { 'translation': _('Worldwide version'), 'icon': 'world', 'prefix': 'ww_' }),
-        ('KR', { 'translation': _('Korean version'), 'icon': 'KR', 'prefix': 'kr_' }),
-        ('CN', { 'translation': _('Chinese version'), 'icon': 'CN', 'prefix': 'cn_' }),
-        ('TW', { 'translation': _('Taiwanese version'), 'icon': 'TW', 'prefix': 'tw_' }),
+        ('JP', { 'translation': _('Japanese version'), 'image': 'ja', 'prefix': 'jp_' }),
+        ('WW', { 'translation': _('Worldwide version'), 'image': 'world', 'prefix': 'ww_' }),
+        ('KR', { 'translation': _('Korean version'), 'image': 'kr', 'prefix': 'kr_' }),
+        ('CN', { 'translation': _('Chinese version'), 'image': 'zh-hans', 'prefix': 'cn_' }),
+        ('TW', { 'translation': _('Taiwanese version'), 'image': 'zh-hant', 'prefix': 'tw_' }),
     ))
 
     VERSION_CHOICES = [(name, info['translation']) for name, info in VERSIONS.items()]
     i_version = models.PositiveIntegerField(_('Version'), choices=i_choices(VERSION_CHOICES), default=1)
-    version_icon = property(getInfoFromChoices('version', VERSIONS, 'icon'))
+    version_image = property(getInfoFromChoices('version', VERSIONS, 'image'))
 
     friend_id = models.PositiveIntegerField(_('Friend ID'), null=True, help_text=_('You can find your friend id by going to the "Friends" section from the home, then "ID Search". Players will be able to send you friend requests or messages using this number.'))
     show_friend_id = models.BooleanField(_('Should your friend ID be visible to other players?'), default=True)
