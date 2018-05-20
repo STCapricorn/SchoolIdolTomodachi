@@ -254,7 +254,6 @@ class EventCollection(MagiCollection):
         return fields
 
     class ItemView(MagiCollection.ItemView):
-        filter_form=forms.EventFilterForm
       
         def to_fields(self, item, order=None, extra_fields=None, exclude_fields=None, *args, **kwargs):
             if extra_fields is None: extra_fields = []
@@ -284,3 +283,16 @@ class EventCollection(MagiCollection):
                 item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)
 
             return fields
+
+    class ListView(MagiCollection.ListView):
+        filter_form = forms.EventFilterForm
+        per_line = 2
+        default_ordering = 'jp_start_date'
+
+    class AddView(MagiCollection.AddView):
+        staff_required = True
+        permissions_required = ['manage_main_items']
+
+    class EditView(MagiCollection.EditView):
+        staff_required = True
+        permissions_required = ['manage_main_items']
