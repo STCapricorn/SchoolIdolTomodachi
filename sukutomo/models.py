@@ -3,10 +3,11 @@ import datetime
 from collections import OrderedDict
 from django.core.validators import MinValueValidator
 from django.contrib.auth.models import User
-from django.utils.translation import ugettext_lazy as _, string_concat
+from django.utils.translation import ugettext_lazy as _, string_concat, get_language
 from django.db import models
 from django.utils import timezone
-from magi.utils import PastOnlyValidator, staticImageURL
+from django.conf import settings as django_settings
+from magi.utils import PastOnlyValidator, staticImageURL, ordinalNumber
 from magi.abstract_models import BaseAccount
 from magi.item_model import MagiModel, i_choices, getInfoFromChoices
 from magi.models import uploadItem
@@ -23,25 +24,26 @@ class Account(BaseAccount):
     # Details
 
     VERSIONS = OrderedDict((
-        ('JP', { 'translation': t['Japanese'], 'icon': 'JP' }),
-        ('WW', { 'translation': _('Worldwide'), 'icon': 'world' }),
-        ('KR', { 'translation': t['Korean'], 'icon': 'KR' }),
-        ('CN', { 'translation': t['Chinese'], 'icon': 'CN' }),
-        ('TW', { 'translation': t['Taiwanese'], 'icon': 'TW' }),
+        ('JP', { 'translation': _('Japanese version'), 'image': 'ja', 'prefix': 'jp_' }),
+        ('WW', { 'translation': _('Worldwide version'), 'image': 'world', 'prefix': 'ww_' }),
+        ('KR', { 'translation': _('Korean version'), 'image': 'kr', 'prefix': 'kr_' }),
+        ('CN', { 'translation': _('Chinese version'), 'image': 'zh-hans', 'prefix': 'cn_' }),
+        ('TW', { 'translation': _('Taiwanese version'), 'image': 'zh-hant', 'prefix': 'tw_' }),
     ))
+
     VERSION_CHOICES = [(name, info['translation']) for name, info in VERSIONS.items()]
     i_version = models.PositiveIntegerField(_('Version'), choices=i_choices(VERSION_CHOICES), default=1)
-    version_icon = property(getInfoFromChoices('version', VERSIONS, 'icon'))
+    version_image = property(getInfoFromChoices('version', VERSIONS, 'image'))
 
     friend_id = models.PositiveIntegerField(_('Friend ID'), null=True, help_text=_('You can find your friend id by going to the "Friends" section from the home, then "ID Search". Players will be able to send you friend requests or messages using this number.'))
     show_friend_id = models.BooleanField(_('Should your friend ID be visible to other players?'), default=True)
     accept_friend_requests = models.NullBooleanField(_('Accept friend requests'), null=True)
     device = models.CharField(_('Device'), help_text=_('The model of your device. Example: Nexus 5, iPhone 4, iPad 2, ...'), max_length=150, null=True)
-    loveca = models.PositiveIntegerField(_('Love gems'), help_text=string_concat(_('Number of {} you currently have in your account.').format(_('Love gems')), ' ', _('This field is completely optional, it\'s here to help you manage your accounts.')), default=0)
-    friend_points = models.PositiveIntegerField(_('Friend Points'), help_text=string_concat(_('Number of {} you currently have in your account.').format(_('Friend Points')), ' ', _('This field is completely optional, it\'s here to help you manage your accounts.')), default=0)
-    g = models.PositiveIntegerField('G', help_text=string_concat(_('Number of {} you currently have in your account.').format('G'), ' ', _('This field is completely optional, it\'s here to help you manage your accounts.')), default=0)
-    tickets = models.PositiveIntegerField('Scouting Tickets', help_text=string_concat(_('Number of {} you currently have in your account.').format('Scouting Tickets'), ' ', _('This field is completely optional, it\'s here to help you manage your accounts.')), default=0)
-    vouchers = models.PositiveIntegerField('Vouchers (blue tickets)', help_text=string_concat(_('Number of {} you currently have in your account.').format('Vouchers (blue tickets)'), ' ', _('This field is completely optional, it\'s here to help you manage your accounts.')), default=0)
+    loveca = models.PositiveIntegerField(_('Love gems'), help_text=string_concat(_('Number of {} you currently have in your account.').format(_('Love gems')), ' ', _('This field is completely optional, it\'s here to help you manage your accounts.')), null=True)
+    friend_points = models.PositiveIntegerField(_('Friend Points'), help_text=string_concat(_('Number of {} you currently have in your account.').format(_('Friend Points')), ' ', _('This field is completely optional, it\'s here to help you manage your accounts.')), null=True)
+    g = models.PositiveIntegerField('G', help_text=string_concat(_('Number of {} you currently have in your account.').format('G'), ' ', _('This field is completely optional, it\'s here to help you manage your accounts.')), null=True)
+    tickets = models.PositiveIntegerField('Scouting Tickets', help_text=string_concat(_('Number of {} you currently have in your account.').format('Scouting Tickets'), ' ', _('This field is completely optional, it\'s here to help you manage your accounts.')), null=True)
+    vouchers = models.PositiveIntegerField('Vouchers (blue tickets)', help_text=string_concat(_('Number of {} you currently have in your account.').format('Vouchers (blue tickets)'), ' ', _('This field is completely optional, it\'s here to help you manage your accounts.')), null=True)
     bought_loveca = models.PositiveIntegerField(_('Total love gems bought'), help_text=_('You can calculate that number in "Other" then "Purchase History".'), null=True)
     show_items = models.BooleanField('', default=True, help_text=_('Should your items be visible to other players?'))
 
@@ -97,13 +99,26 @@ class Account(BaseAccount):
         ).values('level').distinct().count() + 1
 
 ############################################################
-# Idols      
+# Idols
+
+LANGUAGES_NEED_OWN_NAME = [ l for l in django_settings.LANGUAGES if l[0] in ['ru', 'zh-hans', 'zh-hant', 'kr'] ]
+ALL_ALT_LANGUAGES = [ l for l in django_settings.LANGUAGES if l[0] != 'en' ]
 
 class Idol(MagiModel):
     collection_name = 'idol'
 
     owner = models.ForeignKey(User, related_name='added_idols')
     name = models.CharField(_('Name'), max_length=100, unique=True)
+
+    NAMES_CHOICES = LANGUAGES_NEED_OWN_NAME
+    d_names = models.TextField(null=True)
+
+    @property
+    def t_name(self):
+        if get_language() == 'ja':
+            return self.japanese_name
+        return self.names.get(get_language(), self.name)
+
     japanese_name = models.CharField(string_concat(_('Name'), ' (', t['Japanese'], ')'), max_length=100, null=True)
     image = models.ImageField(_('Image'), upload_to=uploadItem('i'), null=True)
 
@@ -117,7 +132,7 @@ class Idol(MagiModel):
     i_attribute = models.PositiveIntegerField(_('Attribute'), choices=i_choices(ATTRIBUTE_CHOICES), null=True)
     @property
     def attribute_image_url(self): return staticImageURL(self.i_attribute, folder='i_attribute', extension='png')
-        
+
     UNIT_CHOICES = (
         u'μ\'s',
         'Aqours',
@@ -138,6 +153,29 @@ class Idol(MagiModel):
 
     i_subunit = models.PositiveIntegerField(_('Subunit'), choices=i_choices(SUBUNIT_CHOICES), null=True)
 
+    SCHOOL_CHOICES = [
+        ('chitose', _('Chitose Bridge High School')),
+        ('seiran', _('Seiran High School')),
+        ('shinonome', _('Shinonome Academy')),
+        ('shion', _('Shion Girls\' Academy')),
+        ('touou', _('Touou Academy')),
+        ('yg', _('Y.G. International Academy')),
+        ('nijigasaki', _('Nijigasaki High School')),
+        ('uranohoshi', _('Uranohoshi Girls\' High School')),
+        ('otonokizaka', _('Otonokizaka Academy')),
+    ]
+
+    i_school = models.PositiveIntegerField(_('School'), choices=i_choices(SCHOOL_CHOICES), null=True)
+
+    YEAR_CHOICES = [
+        # Needs to be re-translated before being displayed
+        ('first', _(u'{nth} year').format(nth=_(ordinalNumber(1)))),
+        ('second', _(u'{nth} year').format(nth=_(ordinalNumber(2)))),
+        ('third', _(u'{nth} year').format(nth=_(ordinalNumber(3)))),
+    ]
+
+    i_year = models.PositiveIntegerField(_('School year'), choices=i_choices(YEAR_CHOICES), null=True)
+
     age = models.PositiveIntegerField(_('Age'), null=True)
     birthday = models.DateField(_('Birthday'), null=True)
 
@@ -155,7 +193,7 @@ class Idol(MagiModel):
         ('aquarius', _('Aquarius')),
         ('taurus', _('Taurus')),
     )
-    
+
     i_astrological_sign = models.PositiveIntegerField(_('Astrological sign'), choices=i_choices(ASTROLOGICAL_SIGN_CHOICES), null=True)
     @property
     def astrological_sign_image_url(self): return staticImageURL(self.i_astrological_sign, folder='i_astrological_sign', extension='png')
@@ -166,16 +204,222 @@ class Idol(MagiModel):
         'B',
         'AB',
     )
-    
-    i_blood = models.PositiveIntegerField(_('Blood'), choices=i_choices(BLOOD_CHOICES), null=True)
+
+    i_blood = models.PositiveIntegerField(_('Blood type'), choices=i_choices(BLOOD_CHOICES), null=True)
+
+    MEASUREMENT_DETAILS = [
+        ('height', _('Height')),
+        ('bust', _('Bust')),
+        ('waist', _('Waist')),
+        ('hips', _('Hips')),
+    ]
 
     height = models.PositiveIntegerField(_('Height'), null=True, default=None)
-
     bust = models.PositiveIntegerField(_('Bust'), null=True)
     waist = models.PositiveIntegerField(_('Waist'), null=True)
     hips = models.PositiveIntegerField(_('Hips'), null=True)
 
     hobbies = models.CharField(_('Hobbies'), max_length=100, null=True)
+
+    HOBBIESS_CHOICES = ALL_ALT_LANGUAGES
+    d_hobbiess = models.TextField(null=True)
+
     favorite_food = models.CharField(_('Favorite food'), max_length=100, null=True)
-    least_favorite_food = models.CharField(_('Least favorite food'), max_length=100, null=True)    
+
+    FAVORITE_FOODS_CHOICES = ALL_ALT_LANGUAGES
+    d_favorite_foods = models.TextField(_('Favorite food'), null=True)
+
+    least_favorite_food = models.CharField(_('Least favorite food'), max_length=100, null=True)
+
+    LEAST_FAVORITE_FOODS_CHOICES = ALL_ALT_LANGUAGES
+    d_least_favorite_foods = models.TextField(null=True)
+
     description = models.TextField(_('Description'), null=True)
+
+    DESCRIPTIONS_CHOICES = ALL_ALT_LANGUAGES
+    d_descriptions = models.TextField(null=True)
+
+############################################################
+# Events
+
+class Event(MagiModel):
+    collection_name = 'event'
+    owner = models.ForeignKey(User, related_name='added_events')
+
+    title = models.CharField(_('Title'), max_length=100)
+    TITLES_CHOICES = ALL_ALT_LANGUAGES
+    d_titles = models.TextField(null=True)
+
+    banner = models.ImageField(_('Banner'), null=True)
+
+    TYPE_CHOICES = (
+        ('token', _('Token')),
+        ('sm', _('Score Match')),
+        ('mf', _('Medley Festival')),
+        ('cf', _('Challenge Festival')),
+        ('as', _('Adventure Stroll')),
+        ('fm', _('Friendly Match')),
+    )
+
+    i_type = models.PositiveIntegerField(_('Event type'), choices=i_choices(TYPE_CHOICES), null=True)
+
+    UNIT_CHOICES = (
+        u'μ\'s',
+        'Aqours',
+    )
+
+    i_unit = models.PositiveIntegerField(_('Unit'), choices=i_choices(UNIT_CHOICES), null=True)
+
+    VERSIONS_CHOICES = Account.VERSION_CHOICES
+    c_versions = models.TextField(_('Server availability'), blank=True, null=True, default='"JP"')
+
+    jp_banner = models.ImageField(string_concat(t['Japanese'], ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
+    jp_start_date = models.DateTimeField(string_concat(t['Japanese'], ' ', _('version'), ' - ', _('Beginning')), null=True)
+    jp_end_date = models.DateTimeField(string_concat(t['Japanese'], ' ', _('version'), ' - ',_('End')), null=True)
+
+    ww_banner = models.ImageField(string_concat(_('Worldwide'), ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
+    ww_start_date = models.DateTimeField(string_concat(_('Worldwide'), ' ', _('version'), ' - ', _('Beginning')), null=True)
+    ww_end_date = models.DateTimeField(string_concat(_('Worldwide'), ' ', _('version'), ' - ',_('End')), null=True)
+
+    tw_banner = models.ImageField(string_concat(_('Taiwanese'), ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
+    tw_start_date = models.DateTimeField(string_concat(_('Taiwanese'), ' ', _('version'), ' - ', _('Beginning')), null=True)
+    tw_end_date = models.DateTimeField(string_concat(_('Taiwanese'), ' ', _('version'), ' - ',_('End')), null=True)
+
+    kr_banner = models.ImageField(string_concat(_('Korean'), ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
+    kr_start_date = models.DateTimeField(string_concat(_('Korean'), ' ', _('version'), ' - ', _('Beginning')), null=True)
+    kr_end_date = models.DateTimeField(string_concat(_('Korean'), ' ', _('version'), ' - ',_('End')), null=True)
+
+    cn_banner = models.ImageField(string_concat(_('Chinese'), ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
+    cn_start_date = models.DateTimeField(string_concat(_('Chinese'), ' ', _('version'), ' - ', _('Beginning')), null=True)
+    cn_end_date = models.DateTimeField(string_concat(_('Chinese'), ' ', _('version'), ' - ',_('End')), null=True)
+
+    def get_status(self, version='JP'):
+        start_date = getattr(self, u'{}start_date'.format(Account.VERSIONS[version]['prefix']))
+        end_date = getattr(self, u'{}end_date'.format(Account.VERSIONS[version]['prefix']))
+        if not end_date or not start_date:
+            return None
+        now = timezone.now()
+        if now > end_date:
+            return 'ended'
+        elif now > start_date:
+            return 'current'
+        return 'future'
+
+    jp_status = property(lambda _s: _s.get_status())
+    ww_status = property(lambda _s: _s.get_status(version='WW'))
+    tw_status = property(lambda _s: _s.get_status(version='TW'))
+    kr_status = property(lambda _s: _s.get_status(version='KR'))
+    cn_status = property(lambda _s: _s.get_status(version='CN'))
+
+############################################################
+# Cards
+class Card(MagiModel):
+
+    collection_name = 'card'
+
+    owner = models.ForeignKey(User, related_name='added-cards')
+
+    name = models.CharField(_('Name'), max_length=100, null=True)#removed skill name 
+
+    #if veiwing as idolized max hp++ or smth, need something to toggle view?
+    
+    initial_smile_points = models.PositiveIntegerField(_('Smile Points'), default=0) 
+    max_unidolized_smile_points = models.PositiveIntegerField(_('Smile Points'), default=0)
+    max_idolized_smile_points = models.PositiveIntegerField(_('Smile Points'), default=0)
+                                                   
+    initial_pure_points = models.PositiveIntegerField(_('Pure Points'), default=0)
+    max_unidolized_pure_points = models.PositiveIntegerField(_('Pure Points'), default=0)
+    max_idolized_pure_points = models.PositiveIntegerField(_('Pure Points'), default=0)
+                                                   
+    initial_cool_points = models.PositiveIntegerField(_('Cool Points'), default=0)
+    max_unidolized__cool_points = models.PositiveIntegerField(_('Cool Points'), default=0)
+    max_idolized_cool_points = models.PositiveIntegerField(_('Cool Points'), default=0)
+
+    hp_unidolized = models.PositiveIntegerField(_('HP'), blank=True, default=0)
+    hp_idolized = hp_unidolized++ #this doesnt seem like it's allowed in a model, is there a better way besides making another integer field?
+    
+    RARITY_CHOICES = (
+        'N'
+        'R'    
+        'SR' 
+        'SSR'
+        'UR'
+    )
+    
+    i_rarity = models.PositiveIntegerField(_('Rarity'), choices=i_choices(RAREITY_CHOICES)) #to clarify, this works based on the order and i don't need to make a tuple with and integer correct?
+    
+    ATTRIBUTE_CHOICES = (
+        ('smile', _('Smile')),
+        ('pure', _('Pure')),
+        ('cool', _('Cool')),
+        ('all', _('All')),
+    )
+    
+    i_attribute = models.PositiveIntegerField(_('Attribute'), choices=i_choices(ATTRIBUTE_CHOICES))
+    
+    idol = models.ForeignKey(Idol, verbose_name=_('Idol'), related_name='cards')
+
+    date = models.DateField(_('Release Date'), null=True)
+
+    event = models.ForeignKey(Event, verbose_name=_('Event'), related_name='event', null=True) #related name okay?
+
+    isPromo = is_promo = models.BooleanField(_('Promo card'), default=False)
+
+    #collection = model.ForeignKey
+
+    #specific detail language style - later commit, not sure how languges and translations work yet
+    SKILL_CHOICES = (
+        ('score up', _('Score Up')),
+        ('perfect lock', _('Perfect Lock')),
+        ('stamina recovery', _('Stamina Recovery')),
+        ('perfect charm', _('')),
+        ('rythmical charm', _('')),
+        ('timer charm', _('')),
+        ('total charm', _('')),
+        ('total trick', _('')),
+        ('timer trick', _('')),
+        ('perfect yell', _('')),
+        ('rythmical yell', _('')),
+        ('total yell', _('')),
+        ('timer yell', _('')),
+        ('appeal boost', _('')),
+        ('skill boost', _('')),
+        ('combo score up', _('')),
+        ('perfect score up', _('')),
+        ('amplify', _('')),
+        ('encore', _('')),
+        ('mirror', _('')),
+    )
+    
+    i_skill = models.PositiveIntegerField(_('Skill'), choices=i_choices(SKILL_CHOICES), null=True)
+
+    #skill decription feilds - later commit
+
+    CENTER_SKILL_CHOICES = (
+        ('angel', _('Angel')),
+        ('empress', _('Empress')),
+        ('princess', _('Princess')),
+        ('star', _('Star')),
+        ('heart', _('Heart')),
+        ('power', _('Power')),
+        ('energy', _('Energy')),
+    )
+    
+    i_center_skill = models.PositiveIntegerField(_('Center Skill'), choices=i_choices(CENTER_SKILL_CHOICES), null=True)
+
+    #center skill decription feilds - later commit  
+    
+    #japan ver choices - later commit
+    
+    #not sure how uploadItem really works, is it the directory path?
+    image_unidolized = models.ImageField(_('Image'), upload_to=uploadItem('i'))
+    image_idolized = models.ImageField(_('Idolized Image'), upload_to=uploadItem('i'))
+    art_unidolized = models.ImageField(_('Art'), upload_to=uploadItem('i'))
+    art_idolized = models.ImageField(_('Idolized Art'), upload_to=uploadItem('i'))
+    transparent_unidolized = models.ImageField(_('Transparent'), upload_to=uploadItem('i'))
+    transparent_idolized = models.ImageField(_('Idolized Transparent'), upload_to=uploadItem('i'))
+
+    #what other utility functions should i include?
+    def __unicode__(self):
+        return self.name
+
