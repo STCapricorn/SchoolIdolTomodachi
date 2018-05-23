@@ -1,72 +1,110 @@
-from magi.item_model import MagiModel
-from magi.models import User, uploadItem, Idol, AccountAsOwnerModel
-
 class Card(MagiModel):
-    collection_name = 'card'
-    RAREITY_CHOICES = (
-    'N'#possibly list with level caps?
-    'R'    
-    'SR' 
-    'SSR'
-    'UR'
-    'Promo R'
-    'Promo SR'
-    'Promo UR'
-    )
-    ATTRIBUTE_CHOICES = (
-    'Smile'
-    'Pure'
-    'Cool'
-    'All'
-    )
-    SKILL_CHOICES = (
-    'Score Up'
-    'Perfect Lock'
-    'Stamina Recovery'
-    'No Skill'
-    )
-    #many too many
-    owner = models.ForeignKey(User, related_name='cards')
-    account = models.ForeignKey(Account, related_name='ownedcards')
-    title = models.CharField(_('Title'), max_length=100, unique=True)
-    image = models.ImageField(_('Image'), upload_to=uploadItem('i'))
-    rareity = models.PositiveIntegerField(_('Rareity'), choices=i_choices(RAREITY_CHOICES), null=True)
-    num = models.PositiveIntegerField(_('Card #ID'), blank=True, unique=True)
-    date = models.DateField(_('Release Date')
-    collection = #i guess each set is a collection, hmmmmm
-    idol = #model field???? lmao
-    skill-name = models.CharField(_('Skill Name'), max_length=100, unique=True)
-    skill-typ = models.PositiveIntegerField(_('Skill'), choices=i_choices(SKILL_CHOICES), null=True)
-    #skill types have specific decriptions hmmmm           
-    center-name = #choice field
-    #skill types have specific decriptions hmmmm                        
-    #if veiwing as idolized max hp++ or smth, need something to toggle view
-    hp = models.PositiveIntegerField(_('HP'), blank=True, null=True))
-    initial-s-points = models.PositiveIntegerField(_('Smile Points'),#can these have the same name?
-    maxUnidol-s-points = models.PositiveIntegerField(_('Smile Points'), 
-    maxIdol-s-points = models.PositiveIntegerField(_('Smile Points'), 
-    initial-p-points = models.PositiveIntegerField(_('Pure Points'), 
-    maxUnidol-p-points = models.PositiveIntegerField(_('Pure Points'), 
-    maxIdol-p-points = models.PositiveIntegerField(_('Pure Points'), 
-    initial-c-points = models.PositiveIntegerField(_('Cool Points'), 
-    maxUnidol-c-points = models.PositiveIntegerField(_('Cool Points'), 
-    maxIdol-c-points = models.PositiveIntegerField(_('Cool Points'),
-    isEvent = #enter a boolean value, or just make it a choice
-    if(isEvent)
-        #event model shenanigans                                    
-    #toggle image download views                         
-    if rareity is SSR or rareity is UR 
-        pair =
-    if rareity not Promo SR or rareity not Promo UR or rareity not Promo R        clean-unidol =
-        transp-unidol =
-    clean-idol =
-    transp-idol =
-    sources = #paragrah feild
-    #how to structure disquis comments... if we arent on the car page it has the amount otherwise the actual commebts
-    comments =
-    japanOnly = #enter a boolean value, or just make it a choice
-    isPromo = #enter a boolean value, or just make it a choice
 
-    #get methods *KEYBOARD SMASH*
+    collection_name = 'card'
+
+    owner = models.ForeignKey(User, related_name='added-cards')
+
+    name = models.CharField(_('Name'), max_length=100, null=True)#removed skill name 
+
+    #if veiwing as idolized max hp++ or smth, need something to toggle view?
+    
+    initial_smile_points = models.PositiveIntegerField(_('Smile Points'), default=0) 
+    max_unidolized_smile_points = models.PositiveIntegerField(_('Smile Points'), default=0)
+    max_idolized_smile_points = models.PositiveIntegerField(_('Smile Points'), default=0)
+                                                   
+    initial_pure_points = models.PositiveIntegerField(_('Pure Points'), default=0)
+    max_unidolized_pure_points = models.PositiveIntegerField(_('Pure Points'), default=0)
+    max_idolized_pure_points = models.PositiveIntegerField(_('Pure Points'), default=0)
+                                                   
+    initial_cool_points = models.PositiveIntegerField(_('Cool Points'), default=0)
+    max_unidolized__cool_points = models.PositiveIntegerField(_('Cool Points'), default=0)
+    max_idolized_cool_points = models.PositiveIntegerField(_('Cool Points'), default=0)
+
+    hp_unidolized = models.PositiveIntegerField(_('HP'), blank=True, default=0)
+    hp_idolized = hp_unidolized++ #this doesnt seem like it's allowed in a model, is there a better way besides making another integer field?
+    
+    RARITY_CHOICES = (
+        'N'
+        'R'    
+        'SR' 
+        'SSR'
+        'UR'
+    )
+    
+    i_rarity = models.PositiveIntegerField(_('Rarity'), choices=i_choices(RAREITY_CHOICES)) #to clarify, this works based on the order and i don't need to make a tuple with and integer correct?
+    
+    ATTRIBUTE_CHOICES = (
+        ('smile', _('Smile')),
+        ('pure', _('Pure')),
+        ('cool', _('Cool')),
+        ('all', _('All')),
+    )
+    
+    i_attribute = models.PositiveIntegerField(_('Attribute'), choices=i_choices(ATTRIBUTE_CHOICES))
+    
+    idol = models.ForeignKey(Idol, verbose_name=_('Idol'), related_name='cards')
+
+    date = models.DateField(_('Release Date'), null=True)
+
+    event = models.ForeignKey(Event, verbose_name=_('Event'), related_name='event', null=True) #related name okay?
+
+    isPromo = is_promo = models.BooleanField(_('Promo card'), default=False)
+
+    #collection = model.ForeignKey
+
+    #specific detail language style - later commit, not sure how languges and translations work yet
+    SKILL_CHOICES = (
+        ('score up', _('Score Up')),
+        ('perfect lock', _('Perfect Lock')),
+        ('stamina recovery', _('Stamina Recovery')),
+        ('perfect charm', _('')),
+        ('rythmical charm', _('')),
+        ('timer charm', _('')),
+        ('total charm', _('')),
+        ('total trick', _('')),
+        ('timer trick', _('')),
+        ('perfect yell', _('')),
+        ('rythmical yell', _('')),
+        ('total yell', _('')),
+        ('timer yell', _('')),
+        ('appeal boost', _('')),
+        ('skill boost', _('')),
+        ('combo score up', _('')),
+        ('perfect score up', _('')),
+        ('amplify', _('')),
+        ('encore', _('')),
+        ('mirror', _('')),
+    )
+    
+    i_skill = models.PositiveIntegerField(_('Skill'), choices=i_choices(SKILL_CHOICES), null=True)
+
+    #skill decription feilds - later commit
+
+    CENTER_SKILL_CHOICES = (
+        ('angel', _('Angel')),
+        ('empress', _('Empress')),
+        ('princess', _('Princess')),
+        ('star', _('Star')),
+        ('heart', _('Heart')),
+        ('power', _('Power')),
+        ('energy', _('Energy')),
+    )
+    
+    i_center_skill = models.PositiveIntegerField(_('Center Skill'), choices=i_choices(CENTER_SKILL_CHOICES), null=True)
+
+    #center skill decription feilds - later commit  
+    
+    #japan ver choices - later commit
+    
+    #not sure how uploadItem really works, is it the directory path?
+    image_unidolized = models.ImageField(_('Image'), upload_to=uploadItem('i'))
+    image_idolized = models.ImageField(_('Idolized Image'), upload_to=uploadItem('i'))
+    art_unidolized = models.ImageField(_('Art'), upload_to=uploadItem('i'))
+    art_idolized = models.ImageField(_('Idolized Art'), upload_to=uploadItem('i'))
+    transparent_unidolized = models.ImageField(_('Transparent'), upload_to=uploadItem('i'))
+    transparent_idolized = models.ImageField(_('Idolized Transparent'), upload_to=uploadItem('i'))
+
+    #what other utility functions should i include?
     def __unicode__(self):
         return self.name
+
