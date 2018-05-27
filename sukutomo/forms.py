@@ -27,6 +27,7 @@ class IdolForm(AutoForm):
     class Meta:
         model = models.Idol
         save_owner_on_creation = True
+        fields = '__all__'
 
 class IdolFilterForm(MagiFiltersForm):
     search_fields = ['name', 'japanese_name', 'hobbies', 'favorite_food', 'least_favorite_food', 'description']
@@ -36,13 +37,13 @@ class IdolFilterForm(MagiFiltersForm):
         ('japanese_name', string_concat(_('Name'), ' (', t['Japanese'], ')')),
         ('i_school', _('School')),
         ('birthday', _('Birthday')),
-        ('age', _('Age')), 
+        ('age', _('Age')),
         ('height', _('Height')),
         ('bust', _('Bust')),
         ('waist', _('Waist')),
         ('hips', _('Hips')),
     ]
-    
+
     class Meta:
         model = models.Idol
         fields = ('search', 'i_attribute', 'i_unit', 'i_subunit', 'i_school', 'i_year', 'i_astrological_sign', 'i_blood')
@@ -67,6 +68,7 @@ class EventForm(AutoForm):
     class Meta:
         model = models.Event
         save_owner_on_creation = True
+        fields = '__all__'
 
 class EventFilterForm(MagiFiltersForm):
     search_fields = ['title', 'd_titles']
@@ -86,4 +88,3 @@ class EventFilterForm(MagiFiltersForm):
     class Meta:
         model = models.Event
         fields = ('search', 'i_type', 'i_unit', 'version')
-

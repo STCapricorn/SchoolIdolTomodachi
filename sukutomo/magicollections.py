@@ -4,8 +4,7 @@ from django.utils.formats import dateformat
 from django.utils.safestring import mark_safe
 from django.utils.translation import string_concat
 from magi.magicollections import MagiCollection, AccountCollection as _AccountCollection
-from magi.utils import staticImageURL, CuteFormType, CuteFormTransform, custom_item_template, torfc2822
-from magi.utils import setSubField
+from magi.utils import staticImageURL, CuteFormType, CuteFormTransform, custom_item_template, torfc2822, setSubField, jsv
 from sukutomo import forms, models
 
 ############################################################
@@ -188,7 +187,7 @@ class IdolCollection(MagiCollection):
 ############################################################
 # Events Collection
 
-EVENT_FIELDS_PER_VERSION = ['banner', 'countdown', 'start_date', 'end_date'] 
+EVENT_FIELDS_PER_VERSION = ['banner', 'countdown', 'start_date', 'end_date']
 
 EVENT_ITEM_FIELDS_ORDER = [
     'banner', 'title', 'type', 'unit',
@@ -218,8 +217,9 @@ class EventCollection(MagiCollection):
     translated_fields = ('title', )
     icon = 'event'
 
-    _version_images = { k: v['image'] for k, v in models.Account.VERSIONS.items() }
-    
+    _version_images = { _k: _v['image'] for _k, _v in models.Account.VERSIONS.items() }
+    _version_prefixes = { _k: _v['prefix'] for _k, _v in models.Account.VERSIONS.items() }
+
     filter_cuteform = {
         'i_unit': {
         },
@@ -254,7 +254,7 @@ class EventCollection(MagiCollection):
         return fields
 
     class ItemView(MagiCollection.ItemView):
-      
+
         def to_fields(self, item, order=None, extra_fields=None, exclude_fields=None, *args, **kwargs):
             if extra_fields is None: extra_fields = []
             if exclude_fields is None: exclude_fields = []
@@ -289,10 +289,26 @@ class EventCollection(MagiCollection):
         per_line = 2
         default_ordering = 'jp_start_date'
 
+    def _modification_extra_context(self, context):
+        if 'js_variables' not in context:
+            context['js_variables'] = {}
+        context['js_variables']['version_prefixes'] = jsv(self._version_prefixes)
+        context['js_variables']['fields_per_version'] = jsv(EVENT_FIELDS_PER_VERSION)
+
     class AddView(MagiCollection.AddView):
         staff_required = True
         permissions_required = ['manage_main_items']
+        ajax_callback = 'loadVersions'
+
+        def extra_context(self, context):
+            super(EventCollection.AddView, self).extra_context(context)
+            self.collection._modification_extra_context(context)
 
     class EditView(MagiCollection.EditView):
         staff_required = True
         permissions_required = ['manage_main_items']
+        ajax_callback = 'loadVersions'
+
+        def extra_context(self, context):
+            super(EventCollection.EditView, self).extra_context(context)
+            self.collection._modification_extra_context(context)
