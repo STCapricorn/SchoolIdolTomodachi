@@ -312,3 +312,20 @@ class EventCollection(MagiCollection):
         def extra_context(self, context):
             super(EventCollection.EditView, self).extra_context(context)
             self.collection._modification_extra_context(context)
+
+############################################################
+# Songs Collection
+
+SONG_FIELDS_PER_DIFFICULTY = ['notes', 'difficulty']
+
+class SongCollection(MagiCollection):
+    queryset = models.Song.objects.all()
+    title = _('Song')
+    plural_title = _('Songs')
+    multipart = True
+    #form_class = forms.SongForm
+    reportable = False
+    blockable = False
+    translated_fields = ('title', )
+    icon = 'song'
+

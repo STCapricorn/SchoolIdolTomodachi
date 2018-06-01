@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 from collections import OrderedDict
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _, string_concat, get_language
 from django.db import models
@@ -310,3 +310,84 @@ class Event(MagiModel):
     tw_status = property(lambda _s: _s.get_status(version='TW'))
     kr_status = property(lambda _s: _s.get_status(version='KR'))
     cn_status = property(lambda _s: _s.get_status(version='CN'))
+
+############################################################
+# Songs
+
+class Song(MagiModel):
+    collection_name = 'song'
+    owner = models.ForeignKey(User, related_name='added_songs', null=True)
+
+    DIFFICULTY_VALIDATORS = [
+        MinValueValidator(1),
+        MaxValueValidator(12),
+    ]
+
+    DIFFICULTIES = [
+        ('easy', _('Easy')),
+        ('normal', _('Normal')),
+        ('hard', _('Hard')),
+        ('expert', _('Expert')),
+        ('master', _('Master')),
+    ]
+
+    SONGWRITERS_DETAILS = [
+        ('composer', _('Composer')),
+        ('lyricist', _('Lyricist')),
+        ('arranger', _('Arranger')),
+    ]
+
+    title = models.CharField(_('Title'), max_length=100)
+    TITLES_CHOICES = ALL_ALT_LANGUAGES
+    d_titles = models.TextField(null=True)
+
+    romaji = models.CharField(string_concat(_('Title'), ' (', _('Romaji'), ')'), max_length=100, null=True)
+    cover = models.ImageField(_('Song Cover'), null=True)
+
+    ATTRIBUTE_CHOICES = Idol.ATTRIBUTE_CHOICES
+    i_attribute = models.PositiveIntegerField(_('Attribute'), choices=i_choices(ATTRIBUTE_CHOICES), null=True)
+
+    UNIT_CHOICES = (
+        u'μ\'s',
+        'Aqours',
+    )
+    i_unit = models.PositiveIntegerField(_('Unit'), choices=i_choices(UNIT_CHOICES), null=True)
+
+#Will find a way to not have to rewrite all of this later, wanna get majority of code done with now
+
+    VERSIONS = OrderedDict((
+        ('JP', { 'translation': _('Japanese version'), 'image': 'ja', 'prefix': 'jp_' }),
+        ('WW', { 'translation': _('Worldwide version'), 'image': 'world', 'prefix': 'ww_' }),
+        ('CN', { 'translation': _('Chinese version'), 'image': 'zh-hans', 'prefix': 'cn_' }),
+    ))
+    
+    VERSIONS_CHOICES = [(name, info['translation']) for name, info in VERSIONS.items()]
+    version_image = property(getInfoFromChoices('version', VERSIONS, 'image'))
+
+    c_versions = models.TextField(_('Server availability'), blank=True, null=True, default='"JP"')
+
+#Ok back to code that I shouldn't have to change later hopefully?
+
+    
+    itunes_id = models.PositiveIntegerField(_('Preview'), help_text='iTunes ID', null=True)
+    length = models.PositiveIntegerField(_('Length'), null=True)
+    bpm = models.PositiveIntegerField(_('Beats per minute'), null=True)
+
+    @property
+    def length_in_minutes(self):
+        return time.strftime('%M:%S', time.gmtime(self.length))
+
+    composer = models.CharField(_('Composer'), max_length=100, null=True)
+    lyricist = models.CharField(_('Lyricist'), max_length=100, null=True)
+    arranger = models.CharField(_('Arranger'), max_length=100, null=True)
+
+    easy_notes = models.PositiveIntegerField(string_concat(_('Easy'), ' - ', _('Notes')), null=True)
+    easy_difficulty = models.PositiveIntegerField(string_concat(_('Easy'), ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
+    normal_notes = models.PositiveIntegerField(string_concat(_('Normal'), ' - ', _('Notes')), null=True)
+    normal_difficulty = models.PositiveIntegerField(string_concat(_('Normal'), ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
+    hard_notes = models.PositiveIntegerField(string_concat(_('Hard'), ' - ', _('Notes')), null=True)
+    hard_difficulty = models.PositiveIntegerField(string_concat(_('Hard'), ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
+    expert_notes = models.PositiveIntegerField(string_concat(_('Expert'), ' - ', _('Notes')), null=True)
+    expert_difficulty = models.PositiveIntegerField(string_concat(_('Expert'), ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
+    master_notes = models.PositiveIntegerField(string_concat(_('Master'), ' - ', _('Notes')), null=True)
+    master_difficulty = models.PositiveIntegerField(string_concat(_('Master'), ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
