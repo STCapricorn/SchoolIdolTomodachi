@@ -316,7 +316,7 @@ class EventCollection(MagiCollection):
 ############################################################
 # Songs Collection
 
-SONG_FIELDS_PER_DIFFICULTY = ['notes', 'difficulty']
+#SONG_FIELDS_PER_DIFFICULTY = ['notes', 'difficulty']
 
 class SongCollection(MagiCollection):
     queryset = models.Song.objects.all()
