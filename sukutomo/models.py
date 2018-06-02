@@ -368,6 +368,7 @@ class Song(MagiModel):
 
 #Ok back to code that I shouldn't have to change later hopefully?
 
+    release = models.DateTimeField(_('Release date'), null=True)  
     itunes_id = models.PositiveIntegerField(_('Preview'), help_text='iTunes ID', null=True)
     length = models.PositiveIntegerField(_('Length'), null=True)
     bpm = models.PositiveIntegerField(_('Beats per minute'), null=True)
