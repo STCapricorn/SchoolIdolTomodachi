@@ -319,10 +319,10 @@ class EventCollection(MagiCollection):
 SONG_FIELDS_PER_DIFFICULTY = ['notes', 'difficulty']
 
 SONGS_ICONS = {
-    'title': 'id', 'romaji':'id', 'versions':'event', 'locations':'world', 'unlock':'perfectlock', 'daily':'toggler',
-    'b_side_start': 'date', 'b_side_end': 'date',
-    'release':'date', 'itunes_id':'play', 'length':'times',
-    'bpm':'hp', 'songwriters':'id', 'easy':'skill', 'master_swipe':'index',
+    'title': 'id', 'romaji':'id', 'versions':'event', 'locations':'world',
+    'unlock':'perfectlock', 'daily':'toggler', 'b_side_start': 'date',
+    'b_side_end': 'date', 'release':'date', 'itunes_id':'play',
+    'length':'times','bpm':'hp', 'master_swipe':'index',
 }
 
 class SongCollection(MagiCollection):
