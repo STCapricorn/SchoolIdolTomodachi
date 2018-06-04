@@ -316,16 +316,80 @@ class EventCollection(MagiCollection):
 ############################################################
 # Songs Collection
 
-#SONG_FIELDS_PER_DIFFICULTY = ['notes', 'difficulty']
+SONG_FIELDS_PER_DIFFICULTY = ['notes', 'difficulty']
+
+SONGS_ICONS = {
+    'title': 'id', 'romaji':'id', 'versions':'event', 'locations':'world', 'unlock':'perfectlock', 'daily':'toggler',
+    'b_side_start': 'date', 'b_side_end': 'date',
+    'release':'date', 'itunes_id':'play', 'length':'times',
+    'bpm':'hp', 'songwriters':'id', 'easy':'skill', 'master_swipe':'index',
+}
 
 class SongCollection(MagiCollection):
     queryset = models.Song.objects.all()
     title = _('Song')
     plural_title = _('Songs')
     multipart = True
-    #form_class = forms.SongForm
+    form_class = forms.SongForm
     reportable = False
     blockable = False
     translated_fields = ('title', )
     icon = 'song'
+
+    filter_cuteform = {
+        'i_unit': {
+        },
+        'i_subunit': {
+        },
+        'version': {
+            'to_cuteform': lambda k, v: EventCollection._version_images[k],
+            'image_folder': 'language',
+            'transform': CuteFormTransform.ImagePath,
+        },
+    }
+
+    def to_fields(self, view, item, *args, **kwargs):
+
+        fields = super(SongCollection, self).to_fields(view, item, *args, icons=SONGS_ICONS,  images={
+                'attribute': staticImageURL(item.i_attribute, folder='i_attribute', extension='png'),
+                'unit': staticImageURL(item.i_unit, folder='i_unit', extension='png'),
+                'subunit': staticImageURL(item.i_subunit, folder='i_subunit', extension='png'),
+        }, **kwargs)
+
+        setSubField(fields, 'b_side_start', key='timezones', value=['Asia/Tokyo', 'Local time'])
+        setSubField(fields, 'b_side_end', key='timezones', value=['Asia/Tokyo', 'Local time'])
+        setSubField(fields, 'release', key='timezones', value=['Asia/Tokyo', 'Local time'])
+
+        return fields
+
+    class ItemView(MagiCollection.ItemView):
+        
+        def to_fields(self, item, order=None, extra_fields=None, exclude_fields=None, *args, **kwargs):
+            if extra_fields is None: extra_fields = []
+            if exclude_fields is None: exclude_fields = []
+            if order is None: order = []
+            status = getattr(item, 'status')
+            if status and status != 'ended':
+                start_date = getattr(item, 'b_side_start')
+                end_date = getattr(item, 'b_side_end')
+                extra_fields += [
+                    ('countdown', {
+                        'verbose_name':  _('Countdown'),
+                        'value': mark_safe(u'<span class="fontx1-5 countdown" data-date="{date}" data-format="{sentence}"></h4>').format(
+                            date=torfc2822(end_date if status == 'current' else start_date),
+                            sentence=_('{time} left') if status == 'current' else _('Starts in {time}'),
+                        ),
+                        'icon': 'times',
+                        'type': 'html',
+                    }),
+                    ]
+                  
+            else:
+                exclude_fields.append('b_side_start')
+                exclude_fields.append('b_side_end')
+
+            fields = super(SongCollection.ItemView, self).to_fields(
+                item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)
+
+            return fields
 

@@ -88,3 +88,19 @@ class EventFilterForm(MagiFiltersForm):
     class Meta:
         model = models.Event
         fields = ('search', 'i_type', 'i_unit', 'version')
+
+class SongForm(AutoForm):
+
+    release = forms.forms.DateField(label=_('Release date'), required=False)
+    b_side_start = forms.forms.DateField(label=string_concat(_('B-Side'), ' - ', _('Beginning')), required=False)
+    b_side_end = forms.forms.DateField(label=string_concat(_('B-Side'), ' - ', _('End')), required=False)
+
+    class Meta:
+        model = models.Song
+        save_owner_on_creation = True
+        fields = '__all__'
+
+class SongFilterForm(MagiFiltersForm):
+    class Meta:
+        model = models.Song
+        fields = ('search', 'i_unit', 'i_subunit')

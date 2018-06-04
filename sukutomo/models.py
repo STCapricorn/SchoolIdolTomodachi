@@ -347,26 +347,26 @@ class Song(MagiModel):
     ATTRIBUTE_CHOICES = Idol.ATTRIBUTE_CHOICES
     i_attribute = models.PositiveIntegerField(_('Attribute'), choices=i_choices(ATTRIBUTE_CHOICES), null=True)
 
-    UNIT_CHOICES = (
-        u'μ\'s',
-        'Aqours',
-    )
+    UNIT_CHOICES = Idol.UNIT_CHOICES
     i_unit = models.PositiveIntegerField(_('Unit'), choices=i_choices(UNIT_CHOICES), null=True)
+    SUBUNIT_CHOICES = Idol.SUBUNIT_CHOICES
+    i_subunit = models.PositiveIntegerField(_('Subunit'), choices=i_choices(SUBUNIT_CHOICES), null=True)
 
-#Will find a way to not have to rewrite all of this later, wanna get majority of code done with now
-
-    VERSIONS = OrderedDict((
-        ('JP', { 'translation': _('Japanese version'), 'image': 'ja', 'prefix': 'jp_' }),
-        ('WW', { 'translation': _('Worldwide version'), 'image': 'world', 'prefix': 'ww_' }),
-        ('CN', { 'translation': _('Chinese version'), 'image': 'zh-hans', 'prefix': 'cn_' }),
-    ))
-    
-    VERSIONS_CHOICES = [(name, info['translation']) for name, info in VERSIONS.items()]
-    version_image = property(getInfoFromChoices('version', VERSIONS, 'image'))
-
+#Note: use js to hide kr and tw later I guess
+    VERSIONS_CHOICES = Account.VERSION_CHOICES
     c_versions = models.TextField(_('Server availability'), blank=True, null=True, default='"JP"')
 
-#Ok back to code that I shouldn't have to change later hopefully?
+    LOCATIONS_CHOICES = [
+        'Hits',
+        'Daily',
+        'B-Side',
+    ]
+    c_locations = models.TextField(_('Locations'), blank=True, null=True)
+    unlock = models.PositiveIntegerField('Unlock details', help_text=_('Will be displayed as "Unlocked at Rank __"'), null=True)
+    daily = models.CharField(_('Daily rotation'), max_length = 100, null=True)
+    b_side_master = models.BooleanField(_('Master?'), default=False)
+    b_side_start = models.DateTimeField(_('B-Side Start'), null=True)
+    b_side_end = models.DateTimeField(_('B-Side End'), null=True)
 
     release = models.DateTimeField(_('Release date'), null=True)  
     itunes_id = models.PositiveIntegerField(_('Preview'), help_text='iTunes ID', null=True)
@@ -391,4 +391,18 @@ class Song(MagiModel):
     expert_difficulty = models.PositiveIntegerField(string_concat(_('Expert'), ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
     master_notes = models.PositiveIntegerField(string_concat(_('Master'), ' - ', _('Notes')), null=True)
     master_difficulty = models.PositiveIntegerField(string_concat(_('Master'), ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
+    master_swipe = models.BooleanField(_('Swipes?'), default=False)
 
+    def get_status(self):
+        start_date = getattr(self, 'b_side_start')
+        end_date = getattr(self, 'b_side_end')
+        if not end_date or not start_date:
+            return None
+        now = timezone.now()
+        if now > end_date:
+            return 'ended'
+        elif now > start_date:
+            return 'current'
+        return 'future'
+
+    status = property(lambda _s: _s.get_status())
