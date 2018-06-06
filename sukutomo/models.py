@@ -362,7 +362,7 @@ class Song(MagiModel):
         'B-Side',
     ]
     c_locations = models.TextField(_('Locations'), blank=True, null=True)
-    unlock = models.PositiveIntegerField('Unlock details', help_text=_('Will be displayed as "Unlocked at Rank __"'), null=True)
+    unlock = models.PositiveIntegerField(_('Unlock'), help_text=_('Will be displayed as "Rank __"'), null=True)
     daily = models.CharField(_('Daily rotation'), max_length = 100, null=True)
     b_side_master = models.BooleanField(_('Master?'), default=False)
     b_side_start = models.DateTimeField(_('B-Side Start'), null=True)
@@ -377,9 +377,23 @@ class Song(MagiModel):
     def length_in_minutes(self):
         return time.strftime('%M:%S', time.gmtime(self.length))
 
+    SONGWRITERS = (
+        ('composer', _('Composer')),
+        ('lyricist', _('Lyricist')),
+        ('arranger', _('Arranger')),
+    )
+
     composer = models.CharField(_('Composer'), max_length=100, null=True)
     lyricist = models.CharField(_('Lyricist'), max_length=100, null=True)
     arranger = models.CharField(_('Arranger'), max_length=100, null=True)
+
+    DIFFICULTIES = (
+        ('easy', _('Easy')),
+        ('normal', _('Normal')),
+        ('hard', _('Hard')),
+        ('expert', _('Expert')),
+        ('master', _('Master')),
+    )
 
     easy_notes = models.PositiveIntegerField(string_concat(_('Easy'), ' - ', _('Notes')), null=True)
     easy_difficulty = models.PositiveIntegerField(string_concat(_('Easy'), ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
