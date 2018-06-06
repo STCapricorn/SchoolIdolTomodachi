@@ -349,10 +349,10 @@ class Song(MagiModel):
 
     UNIT_CHOICES = Idol.UNIT_CHOICES
     i_unit = models.PositiveIntegerField(_('Unit'), choices=i_choices(UNIT_CHOICES), null=True)
+    
     SUBUNIT_CHOICES = Idol.SUBUNIT_CHOICES
     i_subunit = models.PositiveIntegerField(_('Subunit'), choices=i_choices(SUBUNIT_CHOICES), null=True)
 
-#Note: use js to hide kr and tw later I guess
     VERSIONS_CHOICES = Account.VERSION_CHOICES
     c_versions = models.TextField(_('Server availability'), blank=True, null=True, default='"JP"')
 
@@ -361,10 +361,12 @@ class Song(MagiModel):
         'Daily',
         'B-Side',
     ]
+    
     c_locations = models.TextField(_('Locations'), blank=True, null=True)
-    unlock = models.PositiveIntegerField('Unlock details', help_text=_('Will be displayed as "Unlocked at Rank __"'), null=True)
+    
+    unlock = models.PositiveIntegerField(_('Unlock'), help_text=_('Will be displayed as "Rank __"'), null=True)
     daily = models.CharField(_('Daily rotation'), max_length = 100, null=True)
-    b_side_master = models.BooleanField(_('Master?'), default=False)
+    b_side_master = models.BooleanField(string_concat(_('B-Side'), ' - ', _('Master')), default=False)
     b_side_start = models.DateTimeField(_('B-Side Start'), null=True)
     b_side_end = models.DateTimeField(_('B-Side End'), null=True)
 
@@ -391,7 +393,7 @@ class Song(MagiModel):
     expert_difficulty = models.PositiveIntegerField(string_concat(_('Expert'), ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
     master_notes = models.PositiveIntegerField(string_concat(_('Master'), ' - ', _('Notes')), null=True)
     master_difficulty = models.PositiveIntegerField(string_concat(_('Master'), ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
-    master_swipe = models.BooleanField(_('Swipes?'), default=False)
+    master_swipe = models.BooleanField(string_concat(_('Master'), ' - ', _('Swipe')), default=False)
 
     def get_status(self):
         start_date = getattr(self, 'b_side_start')
