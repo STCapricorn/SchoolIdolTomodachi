@@ -319,7 +319,7 @@ class EventCollection(MagiCollection):
 SONG_FIELDS_PER_DIFFICULTY = ['notes', 'difficulty']
 
 SONGS_ICONS = {
-    'title': 'id', 'romaji':'id', 'versions':'event', 'locations':'world',
+    'title': 'id', 'romaji':'id', 'versions':'world', 'locations':'world',
     'unlock':'perfectlock', 'daily':'toggler', 'b_side_start': 'date',
     'b_side_end': 'date', 'release':'date', 'itunes_id':'play',
     'length':'times','bpm':'hp', 'master_swipe':'index',
@@ -377,8 +377,7 @@ class SongCollection(MagiCollection):
                 value = getattr(item, fieldName)
                 exclude_fields.append(fieldName)
                 if value:
-                    values+=u'<b style="font-size:1.1em;">{}</b><br />: '.format(verbose_name)
-                    values+=u'{}<br />'.format(value)
+                    values+=u'<b>{}:</b> {}<br />'.format(verbose_name, value)
             if values:
                 extra_fields.append(('songwriters', {
                     'verbose_name': _('Songwriters'),
@@ -415,21 +414,37 @@ class SongCollection(MagiCollection):
 
             ### difficulties
             for difficulty, d_verbose in models.Song.DIFFICULTIES:
+                difficulties = u' '
+                print difficulty
+                print difficulties
+                difficultystar = u'{}_difficulty'.format(difficulty)
                 difficultynote = u'{}_notes'.format(difficulty)
+                difficultystars = getattr(item, difficultystar)
                 difficultynotes = getattr(item, difficultynote)
-                temp = u'{} notes'.format(difficultynotes)
+                temps = u'{} &#9734 rating'.format(difficultystars)
+                tempn = u'{} notes'.format(difficultynotes)
+                difficulties += temps
+                difficulties += '<br />'
+                difficulties += tempn
+                if difficulty is 'master':
+                    print item.master_swipe
+                    if item.master_swipe is True:
+                        verbose = 'SWIPE'
+                else:
+                    verbose=''
                 extra_fields.append((difficulty, {
-                    'verbose_name': d_verbose,
-                    'type': 'text',
-                    'value': temp,
-                }))
+                'verbose_name': verbose,
+                'type': 'html',
+                'value': difficulties,
+               }))
                 exclude_fields.append(difficulty)
                 exclude_fields.append(difficultynote)
+                exclude_fields.append(difficultystar)
 
-            
             exclude_fields.append('romaji')
             exclude_fields.append('b_side_master')
             exclude_fields.append('c_locations')
+            exclude_fields.append('master_swipe')
 
             order = ['image', 'title', 'attribute', 'unit', 'subunit', 'itunes_id', 'length', 'bpm', 'c_versions', 'unlock',
                      'daily', 'countdown', 'b_side_start', 'b_side_end', 'easy', 'normal', 'hard', 'expert',
@@ -444,6 +459,12 @@ class SongCollection(MagiCollection):
 
             setSubField(fields, 'unlock', key='type', value='text')
             setSubField(fields, 'unlock', key='value', value=u'Rank {}'.format(item.unlock))
+
+            setSubField(fields, 'easy', key='image', value=staticImageURL('easy', folder='difficulty', extension='png'))
+            setSubField(fields, 'normal', key='image', value=staticImageURL('normal', folder='difficulty', extension='png'))
+            setSubField(fields, 'hard', key='image', value=staticImageURL('hard', folder='difficulty', extension='png'))
+            setSubField(fields, 'expert', key='image', value=staticImageURL('expert', folder='difficulty', extension='png'))
+            setSubField(fields, 'master', key='image', value=staticImageURL('master', folder='difficulty', extension='png'))
 
             return fields
 
