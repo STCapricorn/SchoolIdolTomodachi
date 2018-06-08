@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import datetime
+import datetime, time
 from collections import OrderedDict
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.contrib.auth.models import User
@@ -323,13 +323,13 @@ class Song(MagiModel):
         MaxValueValidator(12),
     ]
 
-    DIFFICULTIES = [
-        ('easy', _('Easy')),
-        ('normal', _('Normal')),
-        ('hard', _('Hard')),
-        ('expert', _('Expert')),
-        ('master', _('Master')),
-    ]
+    DIFFICULTIES = (
+        ('easy', 'EASY'),
+        ('normal', 'NORMAL'),
+        ('hard', 'HARD'),
+        ('expert', 'EXPERT'),
+        ('master', 'MASTER'),
+    )
 
     SONGWRITERS_DETAILS = [
         ('composer', _('Composer')),
@@ -364,9 +364,9 @@ class Song(MagiModel):
     c_locations = models.TextField(_('Locations'), blank=True, null=True)
     unlock = models.PositiveIntegerField(_('Unlock'), help_text=_('Will be displayed as "Rank __"'), null=True)
     daily = models.CharField(_('Daily rotation'), max_length = 100, null=True)
-    b_side_master = models.BooleanField(_('Master?'), default=False)
-    b_side_start = models.DateTimeField(_('B-Side Start'), null=True)
-    b_side_end = models.DateTimeField(_('B-Side End'), null=True)
+    b_side_master = models.BooleanField(_('Master'), default=False)
+    b_side_start = models.DateTimeField(string_concat(_('B-Side'), ' ', _('Beginning')), null=True)
+    b_side_end = models.DateTimeField(string_concat(_('B-Side'), ' ', _('End')), null=True)
 
     release = models.DateTimeField(_('Release date'), null=True)  
     itunes_id = models.PositiveIntegerField(_('Preview'), help_text='iTunes ID', null=True)
@@ -387,25 +387,17 @@ class Song(MagiModel):
     lyricist = models.CharField(_('Lyricist'), max_length=100, null=True)
     arranger = models.CharField(_('Arranger'), max_length=100, null=True)
 
-    DIFFICULTIES = (
-        ('easy', _('Easy')),
-        ('normal', _('Normal')),
-        ('hard', _('Hard')),
-        ('expert', _('Expert')),
-        ('master', _('Master')),
-    )
-
-    easy_notes = models.PositiveIntegerField(string_concat(_('Easy'), ' - ', _('Notes')), null=True)
-    easy_difficulty = models.PositiveIntegerField(string_concat(_('Easy'), ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
-    normal_notes = models.PositiveIntegerField(string_concat(_('Normal'), ' - ', _('Notes')), null=True)
-    normal_difficulty = models.PositiveIntegerField(string_concat(_('Normal'), ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
-    hard_notes = models.PositiveIntegerField(string_concat(_('Hard'), ' - ', _('Notes')), null=True)
-    hard_difficulty = models.PositiveIntegerField(string_concat(_('Hard'), ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
-    expert_notes = models.PositiveIntegerField(string_concat(_('Expert'), ' - ', _('Notes')), null=True)
-    expert_difficulty = models.PositiveIntegerField(string_concat(_('Expert'), ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
-    master_notes = models.PositiveIntegerField(string_concat(_('Master'), ' - ', _('Notes')), null=True)
-    master_difficulty = models.PositiveIntegerField(string_concat(_('Master'), ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
-    master_swipe = models.BooleanField(_('Swipes?'), default=False)
+    easy_notes = models.PositiveIntegerField(string_concat('EASY', ' - ', _('Notes')), null=True)
+    easy_difficulty = models.PositiveIntegerField(string_concat('EASY', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
+    normal_notes = models.PositiveIntegerField(string_concat('NORMAL', ' - ', _('Notes')), null=True)
+    normal_difficulty = models.PositiveIntegerField(string_concat('NORMAL', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
+    hard_notes = models.PositiveIntegerField(string_concat('HARD', ' - ', _('Notes')), null=True)
+    hard_difficulty = models.PositiveIntegerField(string_concat('HARD', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
+    expert_notes = models.PositiveIntegerField(string_concat('EXPERT', ' - ', _('Notes')), null=True)
+    expert_difficulty = models.PositiveIntegerField(string_concat('EXPERT', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
+    master_notes = models.PositiveIntegerField(string_concat('MASTER', ' - ', _('Notes')), null=True)
+    master_difficulty = models.PositiveIntegerField(string_concat('MASTER', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
+    master_swipe = models.BooleanField('SWIPE', default=False)
 
     def get_status(self):
         start_date = getattr(self, 'b_side_start')

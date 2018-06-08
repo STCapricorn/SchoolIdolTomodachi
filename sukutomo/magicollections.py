@@ -337,6 +337,7 @@ class SongCollection(MagiCollection):
     icon = 'song'
 
     _version_images = { _k: _v['image'] for _k, _v in models.Account.VERSIONS.items() }
+    _version_prefixes = { _k: _v['prefix'] for _k, _v in models.Account.VERSIONS.items() }
 
     filter_cuteform = {
         'i_unit': {
@@ -361,6 +362,7 @@ class SongCollection(MagiCollection):
         setSubField(fields, 'b_side_start', key='timezones', value=['Asia/Tokyo'])
         setSubField(fields, 'b_side_end', key='timezones', value=['Asia/Tokyo'])
         setSubField(fields, 'release', key='timezones', value=['Asia/Tokyo'])
+        setSubField(fields, 'length', key='value', value=lambda f: item.length_in_minutes)
 
         return fields
 
@@ -467,4 +469,27 @@ class SongCollection(MagiCollection):
             setSubField(fields, 'master', key='image', value=staticImageURL('master', folder='difficulty', extension='png'))
 
             return fields
+
+    def _modification_extra_context(self, context):
+        if 'js_variables' not in context:
+            context['js_variables'] = {}
+        context['js_variables']['version_prefixes'] = jsv(self._version_prefixes)
+
+    class AddView(MagiCollection.AddView):
+        staff_required = True
+        permissions_required = ['manage_main_items']
+        ajax_callback = 'loadSongs'
+
+        def extra_context(self, context):
+            super(SongCollection.AddView, self).extra_context(context)
+            self.collection._modification_extra_context(context)
+
+    class EditView(MagiCollection.EditView):
+        staff_required = True
+        permissions_required = ['manage_main_items']
+        ajax_callback = 'loadSongs'
+
+        def extra_context(self, context):
+            super(SongCollection.EditView, self).extra_context(context)
+            self.collection._modification_extra_context(context)
 
