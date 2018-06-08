@@ -415,13 +415,16 @@ class SongCollection(MagiCollection):
 
             ### difficulties
             for difficulty, d_verbose in models.Song.DIFFICULTIES:
-                difficulty_notes = u'{}_notes'.format(difficulty)
-                if difficulty is not 'master':
-                    extra_fields.append('master', {
-                        'verbose_name': d_verbose,
-                        'type': 'text',
-                        'value': u'{} notes'.format(item.difficulty_notes),
-                    })
+                difficultynote = u'{}_notes'.format(difficulty)
+                difficultynotes = getattr(item, difficultynote)
+                temp = u'{} notes'.format(difficultynotes)
+                extra_fields.append((difficulty, {
+                    'verbose_name': d_verbose,
+                    'type': 'text',
+                    'value': temp,
+                }))
+                exclude_fields.append(difficulty)
+                exclude_fields.append(difficultynote)
 
             
             exclude_fields.append('romaji')
