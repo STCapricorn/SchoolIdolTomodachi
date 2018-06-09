@@ -397,7 +397,7 @@ class Song(MagiModel):
     expert_difficulty = models.PositiveIntegerField(string_concat('EXPERT', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
     master_notes = models.PositiveIntegerField(string_concat('MASTER', ' - ', _('Notes')), null=True)
     master_difficulty = models.PositiveIntegerField(string_concat('MASTER', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
-    master_swipe = models.BooleanField('SWIPE', default=False)
+    master_swipe = models.BooleanField(_('with SWIPE notes'), default=False)
 
     def get_status(self):
         start_date = getattr(self, 'b_side_start')

@@ -425,17 +425,13 @@ class SongCollection(MagiCollection):
                 difficultynotes = getattr(item, difficultynote)
                 temps = u'{} &#9734 rating'.format(difficultystars)
                 tempn = u'{} notes'.format(difficultynotes)
-                difficulties += temps
-                difficulties += '<br />'
-                difficulties += tempn
+                difficulties += u'{}<br />{}'.format(temps, tempn)
                 if difficulty is 'master':
                     print item.master_swipe
                     if item.master_swipe is True:
-                        verbose = 'SWIPE'
-                else:
-                    verbose=''
+                        difficulties += u'<br />{}'.format(_('with SWIPE notes'))
                 extra_fields.append((difficulty, {
-                'verbose_name': verbose,
+                'verbose_name': d_verbose,
                 'type': 'html',
                 'value': difficulties,
                }))
