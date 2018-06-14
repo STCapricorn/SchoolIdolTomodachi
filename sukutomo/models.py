@@ -357,9 +357,9 @@ class Song(MagiModel):
     c_versions = models.TextField(_('Server availability'), blank=True, null=True, default='"JP"')
 
     LOCATIONS_CHOICES = [
-        'Hits',
-        'Daily',
-        'B-Side',
+        ('hits', _('Hits')),
+        ('daily', _('Daily')),
+        ('bside', _('B-Side')),
     ]
     c_locations = models.TextField(_('Locations'), blank=True, null=True)
     unlock = models.PositiveIntegerField(_('Unlock'), help_text=_('Will be displayed as "Rank __"'), null=True)
@@ -370,7 +370,7 @@ class Song(MagiModel):
 
     release = models.DateTimeField(_('Release date'), null=True)  
     itunes_id = models.PositiveIntegerField(_('Preview'), help_text='iTunes ID', null=True)
-    length = models.PositiveIntegerField(_('Length'), null=True)
+    length = models.PositiveIntegerField(_('Length'), help_text=_('in seconds'), null=True)
     bpm = models.PositiveIntegerField(_('Beats per minute'), null=True)
 
     @property
