@@ -417,8 +417,6 @@ class SongCollection(MagiCollection):
             ### difficulties
             for difficulty, d_verbose in models.Song.DIFFICULTIES:
                 difficulties = u' '
-                print difficulty
-                print difficulties
                 difficultystar = u'{}_difficulty'.format(difficulty)
                 difficultynote = u'{}_notes'.format(difficulty)
                 difficultystars = getattr(item, difficultystar)
@@ -427,7 +425,6 @@ class SongCollection(MagiCollection):
                 tempn = u'{} notes'.format(difficultynotes)
                 difficulties += u'{}<br />{}'.format(temps, tempn)
                 if difficulty is 'master':
-                    print item.master_swipe
                     if item.master_swipe is True:
                         difficulties += u'<br />{}'.format(_('with SWIPE notes'))
                 extra_fields.append((difficulty, {

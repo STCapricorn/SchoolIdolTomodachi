@@ -95,6 +95,18 @@ class SongForm(AutoForm):
     b_side_start = forms.forms.DateField(label=string_concat(_('B-Side'), ' - ', _('Beginning')), required=False)
     b_side_end = forms.forms.DateField(label=string_concat(_('B-Side'), ' - ', _('End')), required=False)
 
+    def save(self, commit=False):
+        instance = super(SongForm, self).save(commit=False)
+        if instance.release:
+            instance.release = instance.release.replace(hour=7, minute=00)
+        if instance.b_side_start:
+            instance.b_side_start = instance.b_side_start.replace(hour=7, minute=00)
+        if instance.b_side_end:
+            instance.b_side_end = instance.b_side_end.replace(hour=7, minute=00)
+        if commit:
+            instance.save()
+        return instance
+
     class Meta:
         model = models.Song
         save_owner_on_creation = True
