@@ -359,9 +359,9 @@ class SongCollection(MagiCollection):
                 'subunit': staticImageURL(item.i_subunit, folder='i_subunit', extension='png'),
         }, **kwargs)
 
-        setSubField(fields, 'b_side_start', key='timezones', value=['Asia/Tokyo'])
-        setSubField(fields, 'b_side_end', key='timezones', value=['Asia/Tokyo'])
-        setSubField(fields, 'release', key='timezones', value=['Asia/Tokyo'])
+        setSubField(fields, 'b_side_start', key='timezones', value=['Asia/Tokyo', 'Local time'])
+        setSubField(fields, 'b_side_end', key='timezones', value=['Asia/Tokyo', 'Local time'])
+        setSubField(fields, 'release', key='timezones', value=['Asia/Tokyo', 'Local time'])
         setSubField(fields, 'length', key='value', value=lambda f: item.length_in_minutes)
 
         return fields
