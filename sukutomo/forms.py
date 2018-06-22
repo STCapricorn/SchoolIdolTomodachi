@@ -117,6 +117,21 @@ class SongForm(AutoForm):
         fields = '__all__'
 
 class SongFilterForm(MagiFiltersForm):
+
+    search_fields = ['title', 'd_titles', 'unlock', 'daily', 'composer', 'lyricist', 'arranger',]
+
+    ordering_fields = [
+        ('release', _('Release date')),
+        ('title', _('Title')),
+        ('romaji', string_concat(_('Title'), ' (', _('Romaji'), ')')),
+        ('length', _('Length')),
+        ('bpm', _('Beats per minute')),
+        ('expert_difficulty', string_concat('EXPERT - ', _('Difficulty'))),
+        ('expert_notes', string_concat('EXPERT - ', _('Notes'))),
+        ('master_difficulty', string_concat('MASTER - ', _('Difficulty'))),
+        ('master_notes', string_concat('MASTER - ', _('Notes'))),
+    ]
+    
     class Meta:
         model = models.Song
-        fields = ('search', 'i_unit', 'i_subunit')
+        fields = ('search', 'i_attribute', 'i_unit', 'i_subunit')

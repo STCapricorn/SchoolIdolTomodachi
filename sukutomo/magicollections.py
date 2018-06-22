@@ -340,6 +340,8 @@ class SongCollection(MagiCollection):
     _version_prefixes = { _k: _v['prefix'] for _k, _v in models.Account.VERSIONS.items() }
 
     filter_cuteform = {
+        'i_attribute': {
+        },
         'i_unit': {
         },
         'i_subunit': {
@@ -462,6 +464,11 @@ class SongCollection(MagiCollection):
             setSubField(fields, 'master', key='image', value=staticImageURL('master', folder='difficulty', extension='png'))
 
             return fields
+        
+    class ListView(MagiCollection.ListView):
+        filter_form = forms.SongFilterForm
+        per_line = 4
+        default_ordering = '-release'
 
     def _modification_extra_context(self, context):
         if 'js_variables' not in context:
