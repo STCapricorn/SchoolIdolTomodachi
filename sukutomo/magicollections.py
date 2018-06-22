@@ -394,7 +394,7 @@ class SongCollection(MagiCollection):
                 start_date = getattr(item, 'b_side_start')
                 end_date = getattr(item, 'b_side_end')
                 if item.b_side_master is True:
-                    verbose = string_concat(_('B-Side'), ' - ', _('Countdown'), '  (', _('Master'), ')')
+                    verbose = string_concat(_('B-Side'), ' - ', _('Countdown'), '  (MASTER)')
                 else:
                     verbose = string_concat(_('B-Side'), ' - ', _('Countdown'))
                 extra_fields += [

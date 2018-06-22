@@ -99,10 +99,14 @@ class SongForm(AutoForm):
         instance = super(SongForm, self).save(commit=False)
         if instance.release:
             instance.release = instance.release.replace(hour=7, minute=00)
-        if instance.b_side_start:
-            instance.b_side_start = instance.b_side_start.replace(hour=7, minute=00)
-        if instance.b_side_end:
-            instance.b_side_end = instance.b_side_end.replace(hour=7, minute=00)
+        status = getattr(instance, 'status')
+        if status is 'ended':
+            instance.remove_c('locations', ['bside'])
+        else:
+            if instance.b_side_start:
+                instance.b_side_start = instance.b_side_start.replace(hour=7, minute=00)
+            if instance.b_side_end:
+                instance.b_side_end = instance.b_side_end.replace(hour=7, minute=00)
         if commit:
             instance.save()
         return instance
