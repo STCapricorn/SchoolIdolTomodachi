@@ -323,6 +323,7 @@ SONGS_ICONS = {
     'unlock':'perfectlock', 'daily':'toggler', 'b_side_start': 'date',
     'b_side_end': 'date', 'release':'date', 'itunes_id':'play',
     'length':'times','bpm':'hp', 'master_swipe':'index',
+    'hits': 'deck', 'daily': 'trade', 'b-side': 'times',
 }
 
 class SongCollection(MagiCollection):
@@ -338,6 +339,11 @@ class SongCollection(MagiCollection):
 
     _version_images = { _k: _v['image'] for _k, _v in models.Account.VERSIONS.items() }
     _version_prefixes = { _k: _v['prefix'] for _k, _v in models.Account.VERSIONS.items() }
+    _location_to_cuteform = {
+        'hits': 'deck',
+        'daily': 'trade',
+        'bside': 'times',
+    }
 
     filter_cuteform = {
         'i_attribute': {
@@ -359,6 +365,10 @@ class SongCollection(MagiCollection):
         },
         'availability': {
             'type': CuteFormType.YesNo,
+        },
+        'location': {
+            'transform': CuteFormTransform.Flaticon,
+            'to_cuteform': lambda k, v: SongCollection._location_to_cuteform[k],
         },
     }
 
@@ -488,15 +498,20 @@ class SongCollection(MagiCollection):
 
             return fields
         
-    class ListView(MagiCollection.ListView):
-        filter_form = forms.SongFilterForm
-        per_line = 4
-        default_ordering = '-release'
-
     def _modification_extra_context(self, context):
         if 'js_variables' not in context:
             context['js_variables'] = {}
         context['js_variables']['version_prefixes'] = jsv(self._version_prefixes)
+        
+    class ListView(MagiCollection.ListView):
+        filter_form = forms.SongFilterForm
+        per_line = 4
+        default_ordering = '-release'
+        ajax_pagination_callback = 'loadSongs'
+
+        def extra_context(self, context):
+            super(SongCollection.ListView, self).extra_context(context)
+            self.collection._modification_extra_context(context)
 
     class AddView(MagiCollection.AddView):
         staff_required = True
