@@ -345,11 +345,20 @@ class SongCollection(MagiCollection):
         'i_unit': {
         },
         'i_subunit': {
+            'image_folder': 'i_subunit',
+            'title': _('Subunit'),
+            'extra_settings': {
+                'modal': 'true',
+                'modal-text': 'true',
+            },
         },
         'version': {
             'to_cuteform': lambda k, v: SongCollection._version_images[k],
             'image_folder': 'language',
             'transform': CuteFormTransform.ImagePath,
+        },
+        'availability': {
+            'type': CuteFormType.YesNo,
         },
     }
 
@@ -416,6 +425,20 @@ class SongCollection(MagiCollection):
                 exclude_fields.append('b_side_start')
                 exclude_fields.append('b_side_end')
 
+            availability = getattr(item, 'available')
+            if availability == 'currently available':
+                av_value = True
+            else:
+                av_value = False
+            extra_fields += [
+                ('availability', {
+                    'verbose_name': _('Currently available'),
+                    'value': av_value,
+                    'icon': 'help',
+                    'type': 'bool', ###ask db about this
+                }),
+            ]
+
             ### difficulties
             for difficulty, d_verbose in models.Song.DIFFICULTIES:
                 difficulties = u' '
@@ -443,7 +466,7 @@ class SongCollection(MagiCollection):
             exclude_fields.append('c_locations')
             exclude_fields.append('master_swipe')
 
-            order = ['image', 'title', 'attribute', 'unit', 'subunit', 'itunes_id', 'length', 'bpm', 'c_versions', 'unlock',
+            order = ['image', 'title', 'attribute', 'unit', 'subunit', 'itunes_id', 'length', 'bpm', 'c_versions', 'availability', 'unlock',
                      'daily', 'countdown', 'b_side_start', 'b_side_end', 'easy', 'normal', 'hard', 'expert',
                      'master', 'songwriters', 'release'] + order
 

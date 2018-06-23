@@ -358,7 +358,7 @@ class Song(MagiModel):
 
     LOCATIONS_CHOICES = [
         ('hits', _('Hits')),
-        ('daily', _('Daily')),
+        ('daily', _('Daily rotation')),
         ('bside', _('B-Side')),
     ]
     c_locations = models.TextField(_('Locations'), blank=True, null=True)
@@ -409,6 +409,18 @@ class Song(MagiModel):
             return 'ended'
         elif now > start_date:
             return 'current'
-        return 'future'
+        return 'future'            
 
     status = property(lambda _s: _s.get_status())
+
+    def get_availability(self):
+        release_date = getattr(self, 'release')
+        b_side = getattr(self, 'status')
+        if b_side is 'current':
+            return 'currently available'
+        elif timezone.now() >= release_date:
+            return 'currently available'
+        else:
+            return 'not available'
+
+    available = property(lambda _s: _s.get_availability())
