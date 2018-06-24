@@ -323,13 +323,13 @@ class Song(MagiModel):
         MaxValueValidator(12),
     ]
 
-    DIFFICULTIES = [
-        ('easy', _('Easy')),
-        ('normal', _('Normal')),
-        ('hard', _('Hard')),
-        ('expert', _('Expert')),
-        ('master', _('Master')),
-    ]
+    DIFFICULTIES = (
+        ('easy', 'EASY'),
+        ('normal', 'NORMAL'),
+        ('hard', 'HARD'),
+        ('expert', 'EXPERT'),
+        ('master', 'MASTER'),
+    )
 
     SONGWRITERS_DETAILS = [
         ('composer', _('Composer')),
@@ -344,7 +344,11 @@ class Song(MagiModel):
     romaji = models.CharField(string_concat(_('Title'), ' (', _('Romaji'), ')'), max_length=100, null=True)
     cover = models.ImageField(_('Song Cover'), null=True)
 
-    ATTRIBUTE_CHOICES = Idol.ATTRIBUTE_CHOICES
+    ATTRIBUTE_CHOICES = (
+        ('smile', _('Smile')),
+        ('pure', _('Pure')),
+        ('cool', _('Cool')),
+    )
     i_attribute = models.PositiveIntegerField(_('Attribute'), choices=i_choices(ATTRIBUTE_CHOICES), null=True)
 
     UNIT_CHOICES = Idol.UNIT_CHOICES
@@ -357,43 +361,48 @@ class Song(MagiModel):
     c_versions = models.TextField(_('Server availability'), blank=True, null=True, default='"JP"')
 
     LOCATIONS_CHOICES = [
-        'Hits',
-        'Daily',
-        'B-Side',
+        ('hits', _('Hits')),
+        ('daily', _('Daily rotation')),
+        ('bside', _('B-Side')),
     ]
-    
     c_locations = models.TextField(_('Locations'), blank=True, null=True)
     
     unlock = models.PositiveIntegerField(_('Unlock'), help_text=_('Will be displayed as "Rank __"'), null=True)
     daily = models.CharField(_('Daily rotation'), max_length = 100, null=True)
-    b_side_master = models.BooleanField(string_concat(_('B-Side'), ' - ', _('Master')), default=False)
-    b_side_start = models.DateTimeField(_('B-Side Start'), null=True)
-    b_side_end = models.DateTimeField(_('B-Side End'), null=True)
+    b_side_master = models.BooleanField(_('Master'), default=False)
+    b_side_start = models.DateTimeField(string_concat(_('B-Side'), ' ', _('Beginning')), null=True)
+    b_side_end = models.DateTimeField(string_concat(_('B-Side'), ' ', _('End')), null=True)
 
     release = models.DateTimeField(_('Release date'), null=True)  
     itunes_id = models.PositiveIntegerField(_('Preview'), help_text='iTunes ID', null=True)
-    length = models.PositiveIntegerField(_('Length'), null=True)
+    length = models.PositiveIntegerField(_('Length'), help_text=_('in seconds'), null=True)
     bpm = models.PositiveIntegerField(_('Beats per minute'), null=True)
 
     @property
     def length_in_minutes(self):
         return time.strftime('%M:%S', time.gmtime(self.length))
 
+    SONGWRITERS = (
+        ('composer', _('Composer')),
+        ('lyricist', _('Lyricist')),
+        ('arranger', _('Arranger')),
+    )
+
     composer = models.CharField(_('Composer'), max_length=100, null=True)
     lyricist = models.CharField(_('Lyricist'), max_length=100, null=True)
     arranger = models.CharField(_('Arranger'), max_length=100, null=True)
 
-    easy_notes = models.PositiveIntegerField(string_concat(_('Easy'), ' - ', _('Notes')), null=True)
-    easy_difficulty = models.PositiveIntegerField(string_concat(_('Easy'), ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
-    normal_notes = models.PositiveIntegerField(string_concat(_('Normal'), ' - ', _('Notes')), null=True)
-    normal_difficulty = models.PositiveIntegerField(string_concat(_('Normal'), ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
-    hard_notes = models.PositiveIntegerField(string_concat(_('Hard'), ' - ', _('Notes')), null=True)
-    hard_difficulty = models.PositiveIntegerField(string_concat(_('Hard'), ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
-    expert_notes = models.PositiveIntegerField(string_concat(_('Expert'), ' - ', _('Notes')), null=True)
-    expert_difficulty = models.PositiveIntegerField(string_concat(_('Expert'), ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
-    master_notes = models.PositiveIntegerField(string_concat(_('Master'), ' - ', _('Notes')), null=True)
-    master_difficulty = models.PositiveIntegerField(string_concat(_('Master'), ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
-    master_swipe = models.BooleanField(string_concat(_('Master'), ' - ', _('Swipe')), default=False)
+    easy_notes = models.PositiveIntegerField(string_concat('EASY', ' - ', _('Notes')), null=True)
+    easy_difficulty = models.PositiveIntegerField(string_concat('EASY', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
+    normal_notes = models.PositiveIntegerField(string_concat('NORMAL', ' - ', _('Notes')), null=True)
+    normal_difficulty = models.PositiveIntegerField(string_concat('NORMAL', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
+    hard_notes = models.PositiveIntegerField(string_concat('HARD', ' - ', _('Notes')), null=True)
+    hard_difficulty = models.PositiveIntegerField(string_concat('HARD', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
+    expert_notes = models.PositiveIntegerField(string_concat('EXPERT', ' - ', _('Notes')), null=True)
+    expert_difficulty = models.PositiveIntegerField(string_concat('EXPERT', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
+    master_notes = models.PositiveIntegerField(string_concat('MASTER', ' - ', _('Notes')), null=True)
+    master_difficulty = models.PositiveIntegerField(string_concat('MASTER', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
+    master_swipe = models.BooleanField(_('with SWIPE notes'), default=False)
 
     def get_status(self):
         start_date = getattr(self, 'b_side_start')
@@ -405,6 +414,18 @@ class Song(MagiModel):
             return 'ended'
         elif now > start_date:
             return 'current'
-        return 'future'
+        return 'future'            
 
     status = property(lambda _s: _s.get_status())
+
+    def get_availability(self):
+        release_date = getattr(self, 'release')
+        b_side = getattr(self, 'status')
+        if b_side is 'current':
+            return 'currently available'
+        elif timezone.now() >= release_date:
+            return 'currently available'
+        else:
+            return 'not available'
+
+    available = property(lambda _s: _s.get_availability())
