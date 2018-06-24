@@ -344,15 +344,19 @@ class Song(MagiModel):
     romaji = models.CharField(string_concat(_('Title'), ' (', _('Romaji'), ')'), max_length=100, null=True)
     cover = models.ImageField(_('Song Cover'), null=True)
 
-    ATTRIBUTE_CHOICES = Idol.ATTRIBUTE_CHOICES
+    ATTRIBUTE_CHOICES = (
+        ('smile', _('Smile')),
+        ('pure', _('Pure')),
+        ('cool', _('Cool')),
+    )
     i_attribute = models.PositiveIntegerField(_('Attribute'), choices=i_choices(ATTRIBUTE_CHOICES), null=True)
 
     UNIT_CHOICES = Idol.UNIT_CHOICES
     i_unit = models.PositiveIntegerField(_('Unit'), choices=i_choices(UNIT_CHOICES), null=True)
+    
     SUBUNIT_CHOICES = Idol.SUBUNIT_CHOICES
     i_subunit = models.PositiveIntegerField(_('Subunit'), choices=i_choices(SUBUNIT_CHOICES), null=True)
 
-#Note: use js to hide kr and tw later I guess
     VERSIONS_CHOICES = Account.VERSION_CHOICES
     c_versions = models.TextField(_('Server availability'), blank=True, null=True, default='"JP"')
 
@@ -362,9 +366,10 @@ class Song(MagiModel):
         ('bside', _('B-Side')),
     ]
     c_locations = models.TextField(_('Locations'), blank=True, null=True)
+
     unlock = models.PositiveIntegerField(_('Unlock'), help_text=_('Will be displayed as "Rank __"'), null=True)
     daily = models.CharField(_('Daily rotation'), max_length = 100, null=True)
-    b_side_master = models.BooleanField(_('Master'), default=False)
+    b_side_master = models.BooleanField(_('MASTER'), default=False)
     b_side_start = models.DateTimeField(string_concat(_('B-Side'), ' ', _('Beginning')), null=True)
     b_side_end = models.DateTimeField(string_concat(_('B-Side'), ' ', _('End')), null=True)
 
