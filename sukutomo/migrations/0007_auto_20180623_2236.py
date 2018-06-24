@@ -29,7 +29,7 @@ class Migration(migrations.Migration):
                 ('c_locations', models.TextField(null=True, verbose_name='Locations', blank=True)),
                 ('unlock', models.PositiveIntegerField(help_text='Will be displayed as "Rank __"', null=True, verbose_name='Unlock')),
                 ('daily', models.CharField(max_length=100, null=True, verbose_name='Daily rotation')),
-                ('b_side_master', models.BooleanField(default=False, verbose_name='Master')),
+                ('b_side_master', models.BooleanField(default=False, verbose_name='MASTER')),
                 ('b_side_start', models.DateTimeField(null=True, verbose_name='B-Side Beginning')),
                 ('b_side_end', models.DateTimeField(null=True, verbose_name='B-Side End')),
                 ('release', models.DateTimeField(null=True, verbose_name='Release date')),
