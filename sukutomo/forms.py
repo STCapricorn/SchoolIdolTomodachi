@@ -95,6 +95,11 @@ class SongForm(AutoForm):
     b_side_start = forms.forms.DateField(label=string_concat(_('B-Side'), ' - ', _('Beginning')), required=False)
     b_side_end = forms.forms.DateField(label=string_concat(_('B-Side'), ' - ', _('End')), required=False)
 
+    def __init__(self, *args, **kwargs):
+        super(SongForm, self).__init__(*args, **kwargs)
+        if 'version' in self.fields:
+            self.fields['version'].choices = [(name, verbose) for name, verbose in self.fields['version'].choices if name not in ['KR', 'TW']]
+
     def save(self, commit=False):
         instance = super(SongForm, self).save(commit=False)
         if instance.release:
