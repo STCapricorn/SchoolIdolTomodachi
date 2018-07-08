@@ -97,8 +97,8 @@ class SongForm(AutoForm):
 
     def __init__(self, *args, **kwargs):
         super(SongForm, self).__init__(*args, **kwargs)
-        if 'version' in self.fields:
-            self.fields['version'].choices = [(name, verbose) for name, verbose in self.fields['version'].choices if name not in ['KR', 'TW']]
+        if 'c_versions' in self.fields:
+            self.fields['c_versions'].choices = [(name, verbose) for name, verbose in self.fields['c_versions'].choices if name not in ['KR', 'TW']]
 
     def save(self, commit=False):
         instance = super(SongForm, self).save(commit=False)
