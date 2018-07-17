@@ -490,9 +490,10 @@ class SongCollection(MagiCollection):
             fields = super(SongCollection.ItemView, self).to_fields(
                 item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)
 
-            setSubField(fields, 'title', key='type', value='title_text')
-            setSubField(fields, 'title', key='title', value=item.title)
-            setSubField(fields, 'title', key='value', value=item.romaji)
+            if item.romaji and item.romaji != item.title:
+                setSubField(fields, 'title', key='type', value='title_text')
+                setSubField(fields, 'title', key='title', value=item.title)
+                setSubField(fields, 'title', key='value', value=item.romaji)
 
             setSubField(fields, 'unlock', key='type', value='text')
             setSubField(fields, 'unlock', key='value', value=u'Rank {}'.format(item.unlock))
