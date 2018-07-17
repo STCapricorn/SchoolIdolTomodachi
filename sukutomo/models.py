@@ -423,9 +423,9 @@ class Song(MagiModel):
         b_side = getattr(self, 'status')
         if b_side is 'current':
             return 'currently available'
-        elif timezone.now() >= release_date:
-            return 'currently available'
-        else:
-            return 'not available'
+        elif release_date:
+            if timezone.now() >= release_date:
+                return 'currently available'
+        return 'not available'
 
     available = property(lambda _s: _s.get_availability())

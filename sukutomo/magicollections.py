@@ -183,6 +183,7 @@ class IdolCollection(MagiCollection):
     class EditView(MagiCollection.EditView):
         staff_required = True
         permissions_required = ['manage_main_items']
+        allow_delete = True
 
 ############################################################
 # Events Collection
@@ -308,6 +309,7 @@ class EventCollection(MagiCollection):
         staff_required = True
         permissions_required = ['manage_main_items']
         ajax_callback = 'loadVersions'
+        allow_delete = True
 
         def extra_context(self, context):
             super(EventCollection.EditView, self).extra_context(context)
@@ -394,22 +396,20 @@ class SongCollection(MagiCollection):
             if exclude_fields is None: exclude_fields = []
             if order is None: order = []              
 
-            ###songwriters
             values = u' '
             for fieldName, verbose_name in models.Song.SONGWRITERS:
                 value = getattr(item, fieldName)
                 exclude_fields.append(fieldName)
                 if value:
                     values+=u'<b>{}:</b> {}<br />'.format(verbose_name, value)
-            if values:
+            if values and values is not u' ':
                 extra_fields.append(('songwriters', {
                     'verbose_name': _('Songwriters'),
                     'type': 'html',
                     'value': mark_safe(u'<div class="songwriters-details">{}</div>'.format(values)),
                     'icon': 'id',
                     }))                
-
-            ###b_side countdown          
+  
             status = getattr(item, 'status')
             if status and status != 'ended':
                 start_date = getattr(item, 'b_side_start')
@@ -445,11 +445,10 @@ class SongCollection(MagiCollection):
                     'verbose_name': _('Currently available'),
                     'value': av_value,
                     'icon': 'help',
-                    'type': 'bool', ###ask db about this
+                    'type': 'bool',
                 }),
             ]
 
-            ### difficulties
             for difficulty, d_verbose in models.Song.DIFFICULTIES:
                 difficulties = u' '
                 difficultystar = u'{}_difficulty'.format(difficulty)
@@ -458,15 +457,23 @@ class SongCollection(MagiCollection):
                 difficultynotes = getattr(item, difficultynote)
                 temps = u'{} &#9734 rating'.format(difficultystars)
                 tempn = u'{} notes'.format(difficultynotes)
-                difficulties += u'{}<br />{}'.format(temps, tempn)
-                if difficulty is 'master':
-                    if item.master_swipe is True:
-                        difficulties += u'<br />{}'.format(_('with SWIPE notes'))
-                extra_fields.append((difficulty, {
-                'verbose_name': d_verbose,
-                'type': 'html',
-                'value': difficulties,
-               }))
+                if difficultystars:
+                    if difficultynotes:
+                        difficulties += u'{}<br />{}'.format(temps, tempn)
+                        if difficulty is 'master' and item.master_swipe is True:
+                            difficulties += u'<br />{}'.format(_('with SWIPE notes'))
+                    else:
+                        difficulties += u'{}'.format(temps)
+                elif difficultynotes:
+                    difficulties += u'{}'.format(tempn)
+                    if difficulty is 'master' and item.master_swipe is True:
+                            difficulties += u'<br />{}'.format(_('with SWIPE notes'))
+                if difficulties is not u' ':
+                    extra_fields.append((difficulty, {
+                    'verbose_name': d_verbose,
+                    'type': 'html',
+                    'value': difficulties,
+                    }))
                 exclude_fields.append(difficulty)
                 exclude_fields.append(difficultynote)
                 exclude_fields.append(difficultystar)
@@ -476,7 +483,7 @@ class SongCollection(MagiCollection):
             exclude_fields.append('c_locations')
             exclude_fields.append('master_swipe')
 
-            order = ['image', 'title', 'attribute', 'unit', 'subunit', 'itunes_id', 'length', 'bpm', 'c_versions', 'availability', 'unlock',
+            order = ['cover', 'title', 'attribute', 'unit', 'subunit', 'itunes_id', 'length', 'bpm', 'c_versions', 'availability', 'unlock',
                      'daily', 'countdown', 'b_side_start', 'b_side_end', 'easy', 'normal', 'hard', 'expert',
                      'master', 'songwriters', 'release'] + order
 
@@ -526,8 +533,8 @@ class SongCollection(MagiCollection):
         staff_required = True
         permissions_required = ['manage_main_items']
         ajax_callback = 'loadSongs'
+        allow_delete = True
 
         def extra_context(self, context):
             super(SongCollection.EditView, self).extra_context(context)
             self.collection._modification_extra_context(context)
-
