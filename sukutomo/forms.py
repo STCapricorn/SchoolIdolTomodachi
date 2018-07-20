@@ -154,3 +154,9 @@ class SongFilterForm(MagiFiltersForm):
     class Meta:
         model = models.Song
         fields = ('search', 'i_attribute', 'i_unit', 'i_subunit', 'location', 'version', 'availability')
+
+class CardForm(AutoForm):
+    class Meta:
+        model = models.Card
+        save_owner_on_creation = True
+        fields = '__all__'

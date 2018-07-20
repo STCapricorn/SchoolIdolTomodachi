@@ -429,3 +429,113 @@ class Song(MagiModel):
         return 'not available'
 
     available = property(lambda _s: _s.get_availability())
+
+############################################################
+# Skills
+
+#class Skill(MagiModel):
+#    collection_name = 'skill'
+#    owner = models.ForeignKey(User, related_name='added_skills', null=True)
+
+#    name = models.CharField(_('Name'), max_length=100, unique=True)
+#    NAMES_CHOICES = ALL_ALT_LANGUAGES
+#    d_names = models.TextField(null=True)
+
+############################################################
+# Cards
+
+class Card(MagiModel):
+    collection_name = 'card'
+    owner = models.ForeignKey(User, related_name='added_cards', null=True)
+
+    card_id = models.PositiveIntegerField(_('ID'), unique=True)
+
+    RARITY_CHOICES = (
+        'N',
+        'R',
+        'SR',
+        'SSR',
+        'UR',
+    )
+    i_rarity =  models.PositiveIntegerField(_('Rarity'), choices=i_choices(RARITY_CHOICES), null=True)
+
+    limited = models.BooleanField(_('Limited'), default=False)
+    promo = models.BooleanField(_('Promo'), default=False)
+    support = models.BooleanField(_('Support'), default=False)
+    
+    ATTRIBUTE_CHOICES = Idol.ATTRIBUTE_CHOICES
+    i_attribute = models.PositiveIntegerField(_('Attribute'), choices=i_choices(ATTRIBUTE_CHOICES), null=True)
+
+    VERSIONS_CHOICES = Account.VERSION_CHOICES
+    c_versions = models.TextField(_('Server availability'), blank=True, null=True, default='"JP"')
+
+    release = models.DateTimeField(_('Release date'), null=True)
+
+    skill_name = models.CharField(_('Skill name'), max_length=100, null=True)
+    SKILL_NAMES_CHOICES = ALL_ALT_LANGUAGES
+    d_skill_names = models.TextField(null=True)
+
+    CENTERS = OrderedDict([
+        (1, {
+            'translation': _('Princess'),
+            'focus': 'smile',
+            'on_attribute': _(u'Smile increases drastically (+9%)'),
+            'off_attribute': _(u'{} increases based on Smile'),
+        }),
+        (2, {
+            'translation': _('Angel'),
+            'focus': 'pure',
+            'on_attribute': _(u'Pure increases drastically (+9%)'),
+            'off_attribute': _(u'{} increases based on Pure'),
+        }),
+        (3, {
+            'translation': _('Empress'),
+            'focus': 'cool',
+            'on_attribute': _(u'Cool increases drastically (+9%)'),
+            'off_attribute': _(u'{} increases based on Cool'),
+        }),
+        (4, {
+            'translation': _('Star'),
+            'on_attribute': _(u'{} increases (+7%)'),
+        }),
+        (5, {
+            'translation': _('Heart'),
+            'on_attribute': _(u'{} increases (+6%)'),
+        }),
+        (6, {
+            'translation': _('Power'),
+            'on_attribute': _(u'{} increases  slightly (+3%)'),
+        }),
+        (7, {
+            'translation': _('Energy'),
+            'on_attribute': _(u'{} increases (+4%)'),
+        }),
+        ])
+    CENTER_CHOICES = [(name, info['translation']) for name, info in CENTERS.items()]
+    i_center = models.PositiveIntegerField(_('Center Skill'), choices=i_choices(CENTER_CHOICES), null=True)
+
+    image = models.ImageField(_('Image'), upload_to=uploadItem('i'), null=True)
+    image_idol = models.ImageField(string_concat(_('Image'), ' (', _('Idolized'), ')'), upload_to=uploadItem('i'), null=True)
+
+    icon = models.ImageField(_('Icon'), upload_to=uploadItem('i'), null=True)
+    icon_idol = models.ImageField(string_concat(_('Icon'), ' (', _('Idolized'), ')'), upload_to=uploadItem('i'), null=True)
+
+    transparent = models.ImageField(_('Transparent'), upload_to=uploadItem('i'), null=True)
+    transparent_idol = models.ImageField(string_concat(_('Transparent'), ' (', _('Idolized'), ')'), upload_to=uploadItem('i'), null=True)
+
+    art = models.ImageField(_('Art'), upload_to=uploadItem('i'), null=True)
+    art_idol = models.ImageField(string_concat(_('Art'), ' (', _('Idolized'), ')'), upload_to=uploadItem('i'), null=True)
+
+    smile_min = models.PositiveIntegerField(string_concat(_('Smile'), ' (', _('Minimum'), ')'), null=True)
+    smile_max = models.PositiveIntegerField(string_concat(_('Smile'), ' (', _('Maximum'), ')'), null=True)
+    smile_max_idol = models.PositiveIntegerField(string_concat(_('Smile'), ' (', _('Idolized'), ', ', _('Maximum'), ')'), null=True)
+
+    pure_min = models.PositiveIntegerField(string_concat(_('Pure'), ' (', _('Minimum'), ')'), null=True)
+    pure_max = models.PositiveIntegerField(string_concat(_('Pure'), ' (', _('Maximum'), ')'), null=True)
+    pure_max_idol = models.PositiveIntegerField(string_concat(_('Pure'), ' (', _('Idolized'), ', ', _('Maximum'), ')'), null=True)
+
+    cool_min = models.PositiveIntegerField(string_concat(_('Cool'), ' (', _('Minimum'), ')'), null=True)
+    cool_max = models.PositiveIntegerField(string_concat(_('Cool'), ' (', _('Maximum'), ')'), null=True)
+    cool_max_idol = models.PositiveIntegerField(string_concat(_('Cool'), ' (', _('Idolized'), ', ', _('Maximum'), ')'), null=True)
+
+    hp = models.PositiveIntegerField(string_concat(_('HP'), ' (', _('Unidolized'), ')'), null=True)

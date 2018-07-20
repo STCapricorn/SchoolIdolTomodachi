@@ -539,3 +539,13 @@ class SongCollection(MagiCollection):
         def extra_context(self, context):
             super(SongCollection.EditView, self).extra_context(context)
             self.collection._modification_extra_context(context)
+
+class CardCollection(MagiCollection):
+    queryset = models.Card.objects.all()
+    title = _('Card')
+    plural_title = _('Cards')
+    multipart = True
+    form_class = forms.CardForm
+    reportable = False
+    blockable = False
+    icon = 'card'
