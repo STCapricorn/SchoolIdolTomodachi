@@ -452,7 +452,7 @@ class Skill(MagiModel):
 
 # {unit} {subunit} {year} 3 pre-sets decided based off of Idol
 
-    details = models.TextField(_('Details'), null=True, help_text=_('For every {for_every} {dependency}, there is a __% chance {details}\n\nOther optional variables: {unit}, {subunit}, {year}, {number}, {length}'))
+    details = models.TextField(_('Details'), null=True, help_text=_('For every {for_every} {dependency}, there is a {chance}% chance __ |Optional variables: {unit}, {subunit}, {year}, {number}, {length}'))
 
 ############################################################
 # Cards
@@ -491,13 +491,20 @@ class Card(MagiModel):
     #SKILL_TYPE = models.Skill.SKILL_TYPE
     #i_skill_type = models.PositiveIntegerField(_('Skill Type'), choices=i_choices(SKILL_TYPE, null=True)
     # ^^^ will be to make it easier on staff to sort these. Not mandatory.
-    #skill = models.ManyToManyField(Skill, related_name="added_skills", verbose_name=_('Skill'))
+    skill = models.ForeignKey(Skill, related_name="added_skills", verbose_name=_('Skill'), null=True)
     for_every = models.PositiveIntegerField(_('Rate of Activation'), help_text=_('For every __ {dependency}'), null=True)
     dependency = models.CharField(_('Dependency'), help_text = _('For every {for_every} __'), max_length=100, null=True)
     chance = models.PositiveIntegerField(_('Activation Chance'), help_text=_('there is a __% chance'), null=True)
     number = models.PositiveIntegerField('{number}', null=True)
     length = models.PositiveIntegerField('{length}', null=True)
-    
+
+    SKILL_REPLACE = (
+        'for_every',
+        'dependency',
+        'chance',
+        'number',
+        'length',
+    )
 
     CENTERS = OrderedDict([
         (1, {
@@ -571,3 +578,20 @@ class Card(MagiModel):
     cool_max_idol = models.PositiveIntegerField(string_concat(_('Cool'), ' (', _('Idolized'), ', ', _('Maximum'), ')'), null=True)
 
     hp = models.PositiveIntegerField(string_concat(_('HP'), ' (', _('Unidolized'), ')'), null=True)
+
+############################################################
+# Sets
+
+#class SetsCollections(MagiModel):
+#    collection_name = 'co'
+#    owner = models.ForeignKey(User, related_name='added_sets', null=True)
+
+#    name = models.CharField(_('Name'), max_length=100, unique=True)
+#    NAMES_CHOICES = ALL_ALT_LANGUAGES
+#    d_names = models.TextField(null=True)
+
+#    release = models.DateTimeField(_('Release date'), null=True)
+
+#    cards = models.ManyToManyField(Card, related_name="set_cards", verbose_name=_('Cards'))
+
+# Based off cards, filters are determined? i.e. (Only Aquors, so it is a Aquors set! etc. etc. ?)

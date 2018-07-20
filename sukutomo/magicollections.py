@@ -550,6 +550,34 @@ class CardCollection(MagiCollection):
     blockable = False
     icon = 'deck'
 
+    class ItemView(MagiCollection.ItemView):
+        
+        def to_fields(self, item, order=None, extra_fields=None, exclude_fields=None, *args, **kwargs):
+            if extra_fields is None: extra_fields = []
+            if exclude_fields is None: exclude_fields = []
+            if order is None: order = []
+
+            #if models.Card.skill:
+            #    print models.Card.skill
+            #    skill_sentence=getattr(item, 'skill')
+            #    print skill_sentence
+            #    for variable in models.Card.SKILL_REPLACE:
+            #        print variable
+            #        replace='{{}}'.format(variable)
+            #        print replace
+            #        skill_sentence=skill_sentence.replace(replace, variable)
+            #        print skill_sentence
+
+            #    extra_fields.append(('main_skill', {
+            #        'verbose_name': _('Skill'),
+            #        'type': 'text',
+            #        'value': skill_sentence,
+            #        'icon': 'sparkle',
+            #        }))   
+            #
+            fields = super(CardCollection.ItemView, self).to_fields(
+                item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)
+
 class SkillCollection(MagiCollection):
     queryset = models.Skill.objects.all()
     title = _('Skill')
