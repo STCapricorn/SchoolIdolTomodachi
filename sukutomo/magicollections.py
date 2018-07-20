@@ -548,4 +548,15 @@ class CardCollection(MagiCollection):
     form_class = forms.CardForm
     reportable = False
     blockable = False
-    icon = 'card'
+    icon = 'deck'
+
+class SkillCollection(MagiCollection):
+    queryset = models.Skill.objects.all()
+    title = _('Skill')
+    plural_title = _('Skills')
+    multipart = True
+    form_class = forms.SkillForm
+    reportable = False
+    blockable = False
+    icon = 'sparkle'
+    navbar_link = False

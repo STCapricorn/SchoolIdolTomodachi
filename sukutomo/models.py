@@ -433,13 +433,26 @@ class Song(MagiModel):
 ############################################################
 # Skills
 
-#class Skill(MagiModel):
-#    collection_name = 'skill'
-#    owner = models.ForeignKey(User, related_name='added_skills', null=True)
+class Skill(MagiModel):
+    collection_name = 'skill'
+    owner = models.ForeignKey(User, related_name='added_skills', null=True)
 
-#    name = models.CharField(_('Name'), max_length=100, unique=True)
-#    NAMES_CHOICES = ALL_ALT_LANGUAGES
-#    d_names = models.TextField(null=True)
+    name = models.CharField(_('Name'), max_length=100, unique=True)
+    NAMES_CHOICES = ALL_ALT_LANGUAGES
+    d_names = models.TextField(null=True)
+
+    SKILL_TYPE = (
+        ('score', _('Score Up')),
+        ('pl', _('Perfect Lock')),
+        ('heal', _('Healer')),
+        ('stat', _('Stat Boost')),
+        ('support', _('Support')),
+    )
+    i_skill_type =  models.PositiveIntegerField(_('Skill Type'), choices=i_choices(SKILL_TYPE), null=True)
+
+# {unit} {subunit} {year} 3 pre-sets decided based off of Idol
+
+    details = models.TextField(_('Details'), null=True, help_text=_('For every {for_every} {dependency}, there is a __% chance {details}\n\nOther optional variables: {unit}, {subunit}, {year}, {number}, {length}'))
 
 ############################################################
 # Cards
@@ -461,7 +474,7 @@ class Card(MagiModel):
 
     limited = models.BooleanField(_('Limited'), default=False)
     promo = models.BooleanField(_('Promo'), default=False)
-    support = models.BooleanField(_('Support'), default=False)
+    support = models.BooleanField(_('Support'), default=False) # if selected, will auto-choose support skill
     
     ATTRIBUTE_CHOICES = Idol.ATTRIBUTE_CHOICES
     i_attribute = models.PositiveIntegerField(_('Attribute'), choices=i_choices(ATTRIBUTE_CHOICES), null=True)
@@ -474,6 +487,17 @@ class Card(MagiModel):
     skill_name = models.CharField(_('Skill name'), max_length=100, null=True)
     SKILL_NAMES_CHOICES = ALL_ALT_LANGUAGES
     d_skill_names = models.TextField(null=True)
+
+    #SKILL_TYPE = models.Skill.SKILL_TYPE
+    #i_skill_type = models.PositiveIntegerField(_('Skill Type'), choices=i_choices(SKILL_TYPE, null=True)
+    # ^^^ will be to make it easier on staff to sort these. Not mandatory.
+    #skill = models.ManyToManyField(Skill, related_name="added_skills", verbose_name=_('Skill'))
+    for_every = models.PositiveIntegerField(_('Rate of Activation'), help_text=_('For every __ {dependency}'), null=True)
+    dependency = models.CharField(_('Dependency'), help_text = _('For every {for_every} __'), max_length=100, null=True)
+    chance = models.PositiveIntegerField(_('Activation Chance'), help_text=_('there is a __% chance'), null=True)
+    number = models.PositiveIntegerField('{number}', null=True)
+    length = models.PositiveIntegerField('{length}', null=True)
+    
 
     CENTERS = OrderedDict([
         (1, {
@@ -513,6 +537,14 @@ class Card(MagiModel):
         ])
     CENTER_CHOICES = [(name, info['translation']) for name, info in CENTERS.items()]
     i_center = models.PositiveIntegerField(_('Center Skill'), choices=i_choices(CENTER_CHOICES), null=True)
+
+    GROUP_BOOST = (
+        ('unit', _('Unit')),
+        ('subunit', _('Subunit')),
+        ('year', _('Year')),
+    )
+    i_group = models.PositiveIntegerField(_('Boost Group'), choices=i_choices(GROUP_BOOST), null=True)
+    boost_percent = models.PositiveIntegerField(_('Boost Percentage'), null=True)
 
     image = models.ImageField(_('Image'), upload_to=uploadItem('i'), null=True)
     image_idol = models.ImageField(string_concat(_('Image'), ' (', _('Idolized'), ')'), upload_to=uploadItem('i'), null=True)

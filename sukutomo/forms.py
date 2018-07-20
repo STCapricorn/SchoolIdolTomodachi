@@ -160,3 +160,9 @@ class CardForm(AutoForm):
         model = models.Card
         save_owner_on_creation = True
         fields = '__all__'
+
+class SkillForm(AutoForm):
+    class Meta:
+        model = models.Skill
+        save_owner_on_creation = True
+        fields = '__all__'
