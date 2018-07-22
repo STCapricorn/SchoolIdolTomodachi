@@ -559,6 +559,9 @@ class CardCollection(MagiCollection):
             if exclude_fields is None: exclude_fields = []
             if order is None: order = []
 
+            ### if idol
+            #### if skill/center skill
+
             if item.idol:
                 extra_fields.append(('idol_details', {
                     'verbose_name': _('Idol'),
@@ -594,30 +597,38 @@ class CardCollection(MagiCollection):
                         'icon': 'sparkle',
                         }))
                 
-            if 'center':
-                leader_skill = getattr(item, 'center_details') 
-                if '{}' in leader_skill:
-                    leader_skill.format(getattr(item, 't_attribute'))
-                    
-                leader_second = _('plus group members\' {} pts. up by {}%')
-                if item.group and item.boost_percent:
-                    for gvariable in models.Card.GROUP_BOOST:
-                        if gvariable is item.group:
-                            if item.group is not 'unit':
-                                og = leader_second
-                                var = getattr(item.idol, 't_' + gvariable)
-                                leader_second = og.replace('group', str(var))
-                            else:
-                                og = leader_second
-                                leader_second = og.replace('group', item.idol.unit)
-                    leader_second.format(item.t_attribute, item.boost_percent)
+                if 'center':
+                    leader_skill = getattr(item, 'center_details') 
+                    if '{}' in leader_skill:
+                        leader_skill.format(getattr(item, 't_attribute'))
 
-                extra_fields.append(('leader_skill', {
-                    'verbose_name': _('Leader Skill'),
-                    'type': 'text',
-                    'value': leader_skill,
-                    'icon': 'center',
-                }))
+                    ###^^^ functions
+                    
+                    leader_second = _('plus group members\' {} pts. up by {}%')
+
+                    if item.group is not 0 and item.boost_percent is not None:
+                        
+                        for gvariable, ggvariable in models.Card.GROUP_BOOST:
+                            print gvariable
+
+                            if ggvariable is item.t_group:
+                                if item.t_group is not _('Unit'):
+                                    print item.t_group is not _('Unit')
+
+                                    og = leader_second
+                                    var = getattr(item.idol, 't_' + gvariable)
+                                    leader_second = og.replace('group', var)
+                                else:
+                                    og = leader_second
+                                    leader_second = og.replace('group', item.idol.unit)
+                        leader_second.format(item.t_attribute, item.boost_percent)
+
+                    extra_fields.append(('leader_skill', {
+                        'verbose_name': _('Leader Skill'),
+                        'type': 'text',
+                        'value': leader_skill,
+                        'icon': 'center',
+                    }))
             
             
             fields = super(CardCollection.ItemView, self).to_fields(
