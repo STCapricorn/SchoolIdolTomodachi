@@ -558,10 +558,8 @@ class CardCollection(MagiCollection):
             if extra_fields is None: extra_fields = []
             if exclude_fields is None: exclude_fields = []
             if order is None: order = []
-
-            ### if idol
-            #### if skill/center skill
-
+            
+            ## idol
             if item.idol:
                 extra_fields.append(('idol_details', {
                     'verbose_name': _('Idol'),
@@ -569,7 +567,8 @@ class CardCollection(MagiCollection):
                     'value': string_concat('<a href="', item.idol.item_url, '">', item.idol.t_name, '<img class="idol-small-image" src="', item.idol.image_url,'"></img></a>'),
                     'icon': 'idol',
                 }))
-
+                
+            ## skill
                 if item.skill:
                     skill_details = getattr(item, 'skill_details')
                     for variable in models.Card.SKILL_REPLACE:
@@ -584,10 +583,8 @@ class CardCollection(MagiCollection):
                             var = getattr(item.idol, 't_' + ivariable)
                             var_re = '{' + ivariable + '}'
                             skill_details = og.replace(var_re, str(var))
-
-                    og = skill_details
-                    var = getattr(item.idol, 'unit')
-                    skill_details = og.replace('{unit}', var)
+                        elif item.idol.unit:
+                            skill_details = skill_details.replace('{unit}', item.idol.unit)
                     
                     skill_sentence=_('{} (Level 1)').format(skill_details)  
                     extra_fields.append(('main_skill', {
@@ -596,50 +593,44 @@ class CardCollection(MagiCollection):
                         'value': skill_sentence,
                         'icon': 'sparkle',
                         }))
-                
-                if 'center':
-                    leader_skill = getattr(item, 'center_details') 
-                    if '{}' in leader_skill:
-                        leader_skill.format(getattr(item, 't_attribute'))
-
-                    ###^^^ functions
                     
-                    leader_second = _('plus group members\' {} pts. up by {}%')
-
+            ## leader skill
+            if item.center :
+                leader_skill = getattr(item, 'center_details')
+                leader_skill = leader_skill.format(getattr(item, 't_attribute'))
+                    
+                if item.rarity in ['UR', 'SSR']:
+                    leader_second = _('plus {group} members\' {} pts. up by {}%')
                     if item.group is not 0 and item.boost_percent is not None:
-                        
                         for gvariable, ggvariable in models.Card.GROUP_BOOST:
-                            print gvariable
-
                             if ggvariable is item.t_group:
                                 if item.t_group is not _('Unit'):
-                                    print item.t_group is not _('Unit')
-
                                     og = leader_second
                                     var = getattr(item.idol, 't_' + gvariable)
-                                    leader_second = og.replace('group', var)
+                                    leader_second = og.replace('{group}', var)
                                 else:
                                     og = leader_second
-                                    leader_second = og.replace('group', item.idol.unit)
-                        leader_second.format(item.t_attribute, item.boost_percent)
-
-                    extra_fields.append(('leader_skill', {
-                        'verbose_name': _('Leader Skill'),
-                        'type': 'text',
-                        'value': leader_skill,
-                        'icon': 'center',
-                    }))
+                                    leader_second = og.replace('{group}', item.idol.unit)
+                        leader_second = leader_second.format(item.t_attribute, item.boost_percent)
+                extra_fields.append(('leader_skill', {
+                    'verbose_name': _('Leader Skill'),
+                    'type': 'text',
+                    'value': leader_skill,
+                    'icon': 'center',
+                }))
             
             
             fields = super(CardCollection.ItemView, self).to_fields(
                 item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)
 
-            if item.idol and 'main_skill':
+            if item.idol and item.skill:
                 setSubField(fields, 'main_skill', key='value', value=string_concat(item.skill.card_html(), '<br />', skill_sentence))
             if 'leader_skill':
                 setSubField(fields, 'leader_skill', key='type', value='title_text')
                 setSubField(fields, 'leader_skill', key='title', value=string_concat(item.t_attribute, ' ', item.t_center))
-                setSubField(fields, 'leader_skill', key='value', value=string_concat(item.center_details, ', ', leader_second))
+                ## wrong if statement hhh
+                if item.group is not 0 and item.boost_percent is not None:
+                    setSubField(fields, 'leader_skill', key='value', value=string_concat(leader_skill, ', ', leader_second))
         
                 
 

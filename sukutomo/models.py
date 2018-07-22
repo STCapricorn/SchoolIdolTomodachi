@@ -540,19 +540,19 @@ class Card(MagiModel):
         ('princess', {
             'translation': _('Princess'),
             'focus': 'smile',
-            'on_attribute': _(u'Smile pts. up by +9%'),
+            'on_attribute': _(u'{} pts. up by +9%'),
             'off_attribute': _(u'{} pts. up by +12% of Smile'),
         }),
         ('angel', {
             'translation': _('Angel'),
             'focus': 'pure',
-            'on_attribute': _(u'Pure pts. up by +9%'),
+            'on_attribute': _(u'{} pts. up by +9%'),
             'off_attribute': _(u'{} pts. up by +12% of Pure'),
         }),
         ('empress', {
             'translation': _('Empress'),
             'focus': 'cool',
-            'on_attribute': _(u'Cool pts. up by +9%'),
+            'on_attribute': _(u'{} pts. up by +9%'),
             'off_attribute': _(u'{} pts. up by +12% of Cool'),
         }),
         ('star', {
@@ -575,19 +575,17 @@ class Card(MagiModel):
             
     CENTER_CHOICES = [(name, info['translation']) for name, info in CENTERS.items()]
     i_center = models.PositiveIntegerField(_('Center Skill'), choices=i_choices(CENTER_CHOICES), null=True)
-    center_details = property(lambda _s: _s.center_check())
+    center_focus = property(getInfoFromChoices('center', CENTERS, 'focus'))
+    center_off_attribute = property(getInfoFromChoices('center', CENTERS, 'off_attribute'))
+    center_on_attribute = property(getInfoFromChoices('center', CENTERS, 'on_attribute'))
 
-    CENTER_CHECK = (
-        ('princess'),
-        ('angel'),
-        ('empress'),
-    )
+    OFF_ATTRIBUTE_CENTERS = ['princess', 'angel', 'empress']
 
-    def center_check(self):
-        if self.center and self.center in self.CENTER_CHECK:
-            if self.CENTERS[self.center]['focus'] is not self.attribute:
-                return self.CENTERS[self.center]['off_attribute']
-        return self.CENTERS[self.center]['on_attribute']
+    @property
+    def center_details(self):
+        if self.center in self.OFF_ATTRIBUTE_CENTERS and self.attribute != self.center_focus:
+            return self.center_off_attribute 
+        return self.center_on_attribute
 
     GROUP_BOOST = (
         ('unit', _('Unit')),
