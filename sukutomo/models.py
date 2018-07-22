@@ -76,8 +76,8 @@ class Account(BaseAccount):
     i_play_with = models.PositiveIntegerField(_('Play with'), choices=i_choices(PLAY_WITH_CHOICES), null=True)
 
     OS_CHOICES = (
-        'Android',
-        'iOs',
+        'android',
+        'ios',
     )
     i_os = models.PositiveIntegerField(_('Operating System'), choices=i_choices(OS_CHOICES), null=True)
 
@@ -118,6 +118,9 @@ class Idol(MagiModel):
         if get_language() == 'ja':
             return self.japanese_name
         return self.names.get(get_language(), self.name)
+
+    def __unicode__(self):
+      return self.t_name
 
     japanese_name = models.CharField(string_concat(_('Name'), ' (', t['Japanese'], ')'), max_length=100, null=True)
     image = models.ImageField(_('Image'), upload_to=uploadItem('i'), null=True)
@@ -437,22 +440,30 @@ class Skill(MagiModel):
     collection_name = 'skill'
     owner = models.ForeignKey(User, related_name='added_skills', null=True)
 
+    def __unicode__(self):
+        return u'{}'.format(self.name)
+
+    def card_html(self):
+        return string_concat('<b>', self.name, ' <span class="text-muted">(', self.skill_type, ')</span></b>')
+
     name = models.CharField(_('Name'), max_length=100, unique=True)
     NAMES_CHOICES = ALL_ALT_LANGUAGES
     d_names = models.TextField(null=True)
 
     SKILL_TYPE = (
         ('score', _('Score Up')),
-        ('pl', _('Perfect Lock')),
-        ('heal', _('Healer')),
-        ('stat', _('Stat Boost')),
+        ('pl', _('Timing Boost')),
+        ('heal', _('Recovery')),
+        ('stat', _('Stat Effect')),
         ('support', _('Support')),
     )
     i_skill_type =  models.PositiveIntegerField(_('Skill Type'), choices=i_choices(SKILL_TYPE), null=True)
 
 # {unit} {subunit} {year} 3 pre-sets decided based off of Idol
 
-    details = models.TextField(_('Details'), null=True, help_text=_('For every {for_every} {dependency}, there is a {chance}% chance __ |Optional variables: {unit}, {subunit}, {year}, {number}, {length}'))
+    details = models.TextField(_('Details'), help_text=_('Optional variables: {rate}, {dependency}, {chance}, {unit}, {subunit}, {year}, {number}, {length}'), null=True)
+    DETAILS_CHOICES = ALL_ALT_LANGUAGES
+    d_detailss = models.TextField(null=True)
 
 ############################################################
 # Cards
@@ -461,7 +472,11 @@ class Card(MagiModel):
     collection_name = 'card'
     owner = models.ForeignKey(User, related_name='added_cards', null=True)
 
+    def __unicode__(self):
+      return u'#{}'.format(self.card_id)
+
     card_id = models.PositiveIntegerField(_('ID'), unique=True)
+    idol = models.ForeignKey(Idol, related_name='card_idols', null=True)
 
     RARITY_CHOICES = (
         'N',
@@ -489,61 +504,90 @@ class Card(MagiModel):
     d_skill_names = models.TextField(null=True)
 
     #SKILL_TYPE = models.Skill.SKILL_TYPE
-    #i_skill_type = models.PositiveIntegerField(_('Skill Type'), choices=i_choices(SKILL_TYPE, null=True)
+    #i_skill_type = models.PositiveIntegerField(_('Skill Type'), choices=i_choices(SKILL_TYPE), null=True)
     # ^^^ will be to make it easier on staff to sort these. Not mandatory.
     skill = models.ForeignKey(Skill, related_name="added_skills", verbose_name=_('Skill'), null=True)
-    for_every = models.PositiveIntegerField(_('Rate of Activation'), help_text=_('For every __ {dependency}'), null=True)
-    dependency = models.CharField(_('Dependency'), help_text = _('For every {for_every} __'), max_length=100, null=True)
-    chance = models.PositiveIntegerField(_('Activation Chance'), help_text=_('there is a __% chance'), null=True)
+    skill_details = property(lambda _s: _s.skill.details)
+    rate = models.PositiveIntegerField(_('Rate of Activation'), help_text=_('Every __ {dependency}'), null=True)
+
+    DEPENDENCY_CHOICES = (
+        ('notes', _('notes')),
+        ('PERFECTs'),
+        ('time', _('seconds')),
+        ('combo', _('x combo')),
+    )
+    i_dependency = models.PositiveIntegerField(_('Dependency'), choices=i_choices(DEPENDENCY_CHOICES), null=True)
+    
+    chance = models.PositiveIntegerField(_('% Chance'), help_text=_('there is a __% chance'), null=True)
     number = models.PositiveIntegerField('{number}', null=True)
     length = models.PositiveIntegerField('{length}', null=True)
 
     SKILL_REPLACE = (
-        'for_every',
+        'rate',
         'dependency',
         'chance',
         'number',
         'length',
     )
 
+    IDOL_REPLACE = (
+        'unit',
+        'subunit',
+        'year',
+    )
+
     CENTERS = OrderedDict([
-        (1, {
+        ('princess', {
             'translation': _('Princess'),
             'focus': 'smile',
-            'on_attribute': _(u'Smile increases drastically (+9%)'),
-            'off_attribute': _(u'{} increases based on Smile'),
+            'on_attribute': _(u'Smile pts. up by +9%'),
+            'off_attribute': _(u'{} pts. up by +12% of Smile'),
         }),
-        (2, {
+        ('angel', {
             'translation': _('Angel'),
             'focus': 'pure',
-            'on_attribute': _(u'Pure increases drastically (+9%)'),
-            'off_attribute': _(u'{} increases based on Pure'),
+            'on_attribute': _(u'Pure pts. up by +9%'),
+            'off_attribute': _(u'{} pts. up by +12% of Pure'),
         }),
-        (3, {
+        ('empress', {
             'translation': _('Empress'),
             'focus': 'cool',
-            'on_attribute': _(u'Cool increases drastically (+9%)'),
-            'off_attribute': _(u'{} increases based on Cool'),
+            'on_attribute': _(u'Cool pts. up by +9%'),
+            'off_attribute': _(u'{} pts. up by +12% of Cool'),
         }),
-        (4, {
+        ('star', {
             'translation': _('Star'),
-            'on_attribute': _(u'{} increases (+7%)'),
+            'on_attribute': _(u'{} pts. up by 7%'),
         }),
-        (5, {
+        ('heart', {
             'translation': _('Heart'),
-            'on_attribute': _(u'{} increases (+6%)'),
+            'on_attribute': _(u'{} pts. up by +6%'),
         }),
-        (6, {
-            'translation': _('Power'),
-            'on_attribute': _(u'{} increases  slightly (+3%)'),
-        }),
-        (7, {
+        ('energy', {
             'translation': _('Energy'),
-            'on_attribute': _(u'{} increases (+4%)'),
+            'on_attribute': _(u'{} pts. up by +4%'),
+        }),
+        ('power', {
+            'translation': _('Power'),
+            'on_attribute': _(u'{} pts. up by +3%'),
         }),
         ])
+            
     CENTER_CHOICES = [(name, info['translation']) for name, info in CENTERS.items()]
     i_center = models.PositiveIntegerField(_('Center Skill'), choices=i_choices(CENTER_CHOICES), null=True)
+    center_details = property(lambda _s: _s.center_check())
+
+    CENTER_CHECK = (
+        ('princess'),
+        ('angel'),
+        ('empress'),
+    )
+
+    def center_check(self):
+        if self.center and self.center in self.CENTER_CHECK:
+            if self.CENTERS[self.center]['focus'] is not self.attribute:
+                return self.CENTERS[self.center]['off_attribute']
+        return self.CENTERS[self.center]['on_attribute']
 
     GROUP_BOOST = (
         ('unit', _('Unit')),

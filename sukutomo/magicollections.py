@@ -3,6 +3,7 @@ from django.utils.translation import ugettext_lazy as _, get_language
 from django.utils.formats import dateformat
 from django.utils.safestring import mark_safe
 from django.utils.translation import string_concat
+from magi.item_model import getInfoFromChoices
 from magi.magicollections import MagiCollection, AccountCollection as _AccountCollection
 from magi.utils import staticImageURL, CuteFormType, CuteFormTransform, custom_item_template, torfc2822, setSubField, jsv
 from sukutomo import forms, models
@@ -548,6 +549,7 @@ class CardCollection(MagiCollection):
     form_class = forms.CardForm
     reportable = False
     blockable = False
+    translated_fields = ('skill_name', )
     icon = 'deck'
 
     class ItemView(MagiCollection.ItemView):
@@ -557,26 +559,80 @@ class CardCollection(MagiCollection):
             if exclude_fields is None: exclude_fields = []
             if order is None: order = []
 
-            #if models.Card.skill:
-            #    print models.Card.skill
-            #    skill_sentence=getattr(item, 'skill')
-            #    print skill_sentence
-            #    for variable in models.Card.SKILL_REPLACE:
-            #        print variable
-            #        replace='{{}}'.format(variable)
-            #        print replace
-            #        skill_sentence=skill_sentence.replace(replace, variable)
-            #        print skill_sentence
+            if item.idol:
+                extra_fields.append(('idol_details', {
+                    'verbose_name': _('Idol'),
+                    'type': 'html',
+                    'value': string_concat('<a href="', item.idol.item_url, '">', item.idol.t_name, '<img class="idol-small-image" src="', item.idol.image_url,'"></img></a>'),
+                    'icon': 'idol',
+                }))
 
-            #    extra_fields.append(('main_skill', {
-            #        'verbose_name': _('Skill'),
-            #        'type': 'text',
-            #        'value': skill_sentence,
-            #        'icon': 'sparkle',
-            #        }))   
-            #
+                if item.skill:
+                    skill_details = getattr(item, 'skill_details')
+                    for variable in models.Card.SKILL_REPLACE:
+                        og = skill_details
+                        var = getattr(item, variable)
+                        var_re = '{' + variable + '}'
+                        skill_details = og.replace(var_re, str(var))
+
+                    for ivariable in models.Card.IDOL_REPLACE:
+                        if ivariable is not 'unit':
+                            og = skill_details
+                            var = getattr(item.idol, 't_' + ivariable)
+                            var_re = '{' + ivariable + '}'
+                            skill_details = og.replace(var_re, str(var))
+
+                    og = skill_details
+                    var = getattr(item.idol, 'unit')
+                    skill_details = og.replace('{unit}', var)
+                    
+                    skill_sentence=_('{} (Level 1)').format(skill_details)  
+                    extra_fields.append(('main_skill', {
+                        'verbose_name': _('Skill'),
+                        'type': 'html',
+                        'value': skill_sentence,
+                        'icon': 'sparkle',
+                        }))
+                
+            if 'center':
+                leader_skill = getattr(item, 'center_details') 
+                if '{}' in leader_skill:
+                    leader_skill.format(getattr(item, 't_attribute'))
+                    
+                leader_second = _('plus group members\' {} pts. up by {}%')
+                if item.group and item.boost_percent:
+                    for gvariable in models.Card.GROUP_BOOST:
+                        if gvariable is item.group:
+                            if item.group is not 'unit':
+                                og = leader_second
+                                var = getattr(item.idol, 't_' + gvariable)
+                                leader_second = og.replace('group', str(var))
+                            else:
+                                og = leader_second
+                                leader_second = og.replace('group', item.idol.unit)
+                    leader_second.format(item.t_attribute, item.boost_percent)
+
+                extra_fields.append(('leader_skill', {
+                    'verbose_name': _('Leader Skill'),
+                    'type': 'text',
+                    'value': leader_skill,
+                    'icon': 'center',
+                }))
+            
+            
             fields = super(CardCollection.ItemView, self).to_fields(
                 item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)
+
+            if item.idol and 'main_skill':
+                setSubField(fields, 'main_skill', key='value', value=string_concat(item.skill.card_html(), '<br />', skill_sentence))
+            if 'leader_skill':
+                setSubField(fields, 'leader_skill', key='type', value='title_text')
+                setSubField(fields, 'leader_skill', key='title', value=string_concat(item.t_attribute, ' ', item.t_center))
+                setSubField(fields, 'leader_skill', key='value', value=string_concat(item.center_details, ', ', leader_second))
+        
+                
+
+            return fields
 
 class SkillCollection(MagiCollection):
     queryset = models.Skill.objects.all()
@@ -586,5 +642,6 @@ class SkillCollection(MagiCollection):
     form_class = forms.SkillForm
     reportable = False
     blockable = False
+    translated_fields = ('name', 'details',)
     icon = 'sparkle'
     navbar_link = False

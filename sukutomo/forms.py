@@ -156,6 +156,9 @@ class SongFilterForm(MagiFiltersForm):
         fields = ('search', 'i_attribute', 'i_unit', 'i_subunit', 'location', 'version', 'availability')
 
 class CardForm(AutoForm):
+
+    release = forms.forms.DateField(label=_('Release date'), required=False)
+    
     class Meta:
         model = models.Card
         save_owner_on_creation = True
