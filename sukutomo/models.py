@@ -459,8 +459,6 @@ class Skill(MagiModel):
     )
     i_skill_type =  models.PositiveIntegerField(_('Skill Type'), choices=i_choices(SKILL_TYPE), null=True)
 
-# {unit} {subunit} {year} 3 pre-sets decided based off of Idol
-
     details = models.TextField(_('Details'), help_text=_('Optional variables: {rate}, {dependency}, {chance}, {unit}, {subunit}, {year}, {number}, {length}'), null=True)
     DETAILS_CHOICES = ALL_ALT_LANGUAGES
     d_detailss = models.TextField(null=True)
@@ -598,14 +596,23 @@ class Card(MagiModel):
     image = models.ImageField(_('Image'), upload_to=uploadItem('i'), null=True)
     image_idol = models.ImageField(string_concat(_('Image'), ' (', _('Idolized'), ')'), upload_to=uploadItem('i'), null=True)
 
+    old_image = models.ImageField(string_concat(_('Image'), ' (', _('Old'), ')'), upload_to=uploadItem('i'), null=True)
+    old_image_idol = models.ImageField(string_concat(_('Image'), ' (', _('Old'), ', ', _('Idolized'), ')'), upload_to=uploadItem('i'), null=True)
+
     icon = models.ImageField(_('Icon'), upload_to=uploadItem('i'), null=True)
     icon_idol = models.ImageField(string_concat(_('Icon'), ' (', _('Idolized'), ')'), upload_to=uploadItem('i'), null=True)
+
+    old_icon = models.ImageField(string_concat(_('Icon'), ' (', _('Old'), ')'), upload_to=uploadItem('i'), null=True)
+    old_icon_idol = models.ImageField(string_concat(_('Icon'), ' (', _('Old'), ', ', _('Idolized'), ')'), upload_to=uploadItem('i'), null=True)
 
     transparent = models.ImageField(_('Transparent'), upload_to=uploadItem('i'), null=True)
     transparent_idol = models.ImageField(string_concat(_('Transparent'), ' (', _('Idolized'), ')'), upload_to=uploadItem('i'), null=True)
 
     art = models.ImageField(_('Art'), upload_to=uploadItem('i'), null=True)
     art_idol = models.ImageField(string_concat(_('Art'), ' (', _('Idolized'), ')'), upload_to=uploadItem('i'), null=True)
+
+    old_art = models.ImageField(string_concat(_('Art'), ' (', _('Old'), ')'), upload_to=uploadItem('i'), null=True)
+    old_art_idol = models.ImageField(string_concat(_('Art'), ' (', _('Old'), ', ', _('Idolized'), ')'), upload_to=uploadItem('i'), null=True)
 
     smile_min = models.PositiveIntegerField(string_concat(_('Smile'), ' (', _('Minimum'), ')'), null=True)
     smile_max = models.PositiveIntegerField(string_concat(_('Smile'), ' (', _('Maximum'), ')'), null=True)

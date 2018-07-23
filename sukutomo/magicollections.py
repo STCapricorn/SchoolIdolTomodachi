@@ -617,18 +617,17 @@ class CardCollection(MagiCollection):
                     'type': 'text',
                     'value': leader_skill,
                     'icon': 'center',
-                }))
-            
+                }))   
             
             fields = super(CardCollection.ItemView, self).to_fields(
                 item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)
 
             if item.idol and item.skill:
                 setSubField(fields, 'main_skill', key='value', value=string_concat(item.skill.card_html(), '<br />', skill_sentence))
-            if 'leader_skill':
+            if item.center:
                 setSubField(fields, 'leader_skill', key='type', value='title_text')
                 setSubField(fields, 'leader_skill', key='title', value=string_concat(item.t_attribute, ' ', item.t_center))
-                ## wrong if statement hhh
+
                 if item.group is not 0 and item.boost_percent is not None:
                     setSubField(fields, 'leader_skill', key='value', value=string_concat(leader_skill, ', ', leader_second))
         
