@@ -404,7 +404,8 @@ class Song(MagiModel):
     master_difficulty = models.PositiveIntegerField(string_concat('MASTER', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
     master_swipe = models.BooleanField(_('with SWIPE notes'), default=False)
 
-    def get_status(self):
+    @property
+    def status(self):
         start_date = getattr(self, 'b_side_start')
         end_date = getattr(self, 'b_side_end')
         if not end_date or not start_date:
@@ -416,9 +417,8 @@ class Song(MagiModel):
             return 'current'
         return 'future'            
 
-    status = property(lambda _s: _s.get_status())
-
-    def get_availability(self):
+    @property
+    def available(self):
         release_date = getattr(self, 'release')
         b_side = getattr(self, 'status')
         if b_side is 'current':
@@ -427,5 +427,3 @@ class Song(MagiModel):
             if timezone.now() >= release_date:
                 return True
         return False
-
-    available = property(lambda _s: _s.get_availability())
