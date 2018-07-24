@@ -370,8 +370,8 @@ class Song(MagiModel):
     unlock = models.PositiveIntegerField(_('Unlock'), help_text=_('Will be displayed as "Rank __"'), null=True)
     daily = models.CharField(_('Daily rotation'), max_length = 100, null=True)
     b_side_master = models.BooleanField(_('MASTER'), default=False)
-    b_side_start = models.DateTimeField(string_concat(_('B-Side'), ' ', _('Beginning')), null=True)
-    b_side_end = models.DateTimeField(string_concat(_('B-Side'), ' ', _('End')), null=True)
+    b_side_start = models.DateTimeField(string_concat(_('B-Side'), ' - ', _('Beginning')), null=True)
+    b_side_end = models.DateTimeField(string_concat(_('B-Side'), ' - ', _('End')), null=True)
 
     release = models.DateTimeField(_('Release date'), null=True)  
     itunes_id = models.PositiveIntegerField(_('Preview'), help_text='iTunes ID', null=True)
@@ -422,10 +422,10 @@ class Song(MagiModel):
         release_date = getattr(self, 'release')
         b_side = getattr(self, 'status')
         if b_side is 'current':
-            return 'currently available'
+            return True
         elif release_date:
             if timezone.now() >= release_date:
                 return 'currently available'
-        return 'not available'
+        return False
 
     available = property(lambda _s: _s.get_availability())

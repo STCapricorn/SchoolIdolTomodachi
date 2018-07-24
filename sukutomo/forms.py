@@ -1,7 +1,9 @@
 import datetime
 from magi import forms
 from django.core.validators import MinValueValidator
+from django.db.models import Q
 from django.db.models.fields import BLANK_CHOICE_DASH
+from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _, string_concat
 from magi.utils import PastOnlyValidator
 from magi.forms import AutoForm, MagiFiltersForm, MagiFilter
@@ -137,8 +139,8 @@ class SongFilterForm(MagiFiltersForm):
         ('master_notes', string_concat('MASTER - ', _('Notes'))),
     ]
 
-    availability = forms.forms.NullBooleanField(initial=None, required=False, label=_('Currently available'))
-    availability_filter = MagiFilter(selector='availability')
+    available = forms.forms.NullBooleanField(initial=None, required=False, label=_('Currently available'))
+    available_filter = MagiFilter(to_queryset=lambda form, queryset, request, value: queryset.filter(Q(b_side_start__lte=timezone.now(), b_side_end__gte=timezone.now) | Q(b_side_start=None, b_side_end=None, release__lte=timezone.now())))
 
     location = forms.forms.ChoiceField(label=_('Location'), choices=BLANK_CHOICE_DASH + models.Song.LOCATIONS_CHOICES)
     location_filter = MagiFilter(to_queryset=lambda form, queryset, request, value: queryset.filter(c_locations__contains=value))
@@ -153,4 +155,4 @@ class SongFilterForm(MagiFiltersForm):
             
     class Meta:
         model = models.Song
-        fields = ('search', 'i_attribute', 'i_unit', 'i_subunit', 'location', 'version', 'availability')
+        fields = ('search', 'i_attribute', 'i_unit', 'i_subunit', 'location', 'version', 'available')

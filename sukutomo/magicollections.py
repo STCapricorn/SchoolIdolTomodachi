@@ -365,7 +365,7 @@ class SongCollection(MagiCollection):
             'image_folder': 'language',
             'transform': CuteFormTransform.ImagePath,
         },
-        'availability': {
+        'available': {
             'type': CuteFormType.YesNo,
         },
         'location': {
@@ -435,8 +435,8 @@ class SongCollection(MagiCollection):
                 exclude_fields.append('b_side_start')
                 exclude_fields.append('b_side_end')
 
-            availability = getattr(item, 'available')
-            if availability == 'currently available':
+            available = getattr(item, 'available')
+            if available == True:
                 av_value = True
             else:
                 av_value = False
