@@ -425,7 +425,7 @@ class Song(MagiModel):
             return True
         elif release_date:
             if timezone.now() >= release_date:
-                return 'currently available'
+                return True
         return False
 
     available = property(lambda _s: _s.get_availability())
