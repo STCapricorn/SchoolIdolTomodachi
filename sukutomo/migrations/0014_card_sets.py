@@ -7,14 +7,14 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('sukutomo', '0021_auto_20180721_1403'),
+        ('sukutomo', '0013_set'),
     ]
 
     operations = [
-        migrations.AlterField(
+        migrations.AddField(
             model_name='card',
-            name='idol',
-            field=models.ForeignKey(related_name='card_idols', to='sukutomo.Idol', null=True),
+            name='sets',
+            field=models.ForeignKey(related_name='added_sets', verbose_name='Sets', to='sukutomo.Set', null=True),
             preserve_default=True,
         ),
     ]

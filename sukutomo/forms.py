@@ -180,8 +180,19 @@ class CardForm(AutoForm):
         save_owner_on_creation = True
         fields = '__all__'
 
+class CardFilterForm(MagiFiltersForm):
+    class Meta:
+        model = models.Card
+        fields = ('sets', )
+
 class SkillForm(AutoForm):
     class Meta:
         model = models.Skill
+        save_owner_on_creation = True
+        fields = '__all__'
+
+class SetForm(AutoForm):
+    class Meta:
+        model = models.Set
         save_owner_on_creation = True
         fields = '__all__'

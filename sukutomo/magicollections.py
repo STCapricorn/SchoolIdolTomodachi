@@ -280,6 +280,7 @@ class EventCollection(MagiCollection):
             ]
             exclude_fields.append('start_date')
             exclude_fields.append('end_date')
+            
             order = EVENT_ITEM_FIELDS_ORDER + order
             fields = super(EventCollection.ItemView, self).to_fields(
                 item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)
@@ -549,11 +550,10 @@ class CardCollection(MagiCollection):
     form_class = forms.CardForm
     reportable = False
     blockable = False
-    translated_fields = ('skill_name', )
+    translated_fields = ('skill_name', 'details', )
     icon = 'deck'
 
-    class ItemView(MagiCollection.ItemView):
-        
+    class ItemView(MagiCollection.ItemView):        
         def to_fields(self, item, order=None, extra_fields=None, exclude_fields=None, *args, **kwargs):
             if extra_fields is None: extra_fields = []
             if exclude_fields is None: exclude_fields = []
@@ -595,7 +595,7 @@ class CardCollection(MagiCollection):
                         }))
                     
             ## leader skill
-            if item.center :
+            if item.center:
                 leader_skill = getattr(item, 'center_details')
                 leader_skill = leader_skill.format(getattr(item, 't_attribute'))
                     
@@ -617,7 +617,15 @@ class CardCollection(MagiCollection):
                     'type': 'text',
                     'value': leader_skill,
                     'icon': 'center',
-                }))   
+                }))
+
+                if item.sets:
+                    extra_fields.append(('set', {
+                        'verbose_name': _('Set'),
+                        'type': 'html',
+                        'value': string_concat('<a href="', u'/ajax/cards/', '">', item.sets.set_html, '</a>'),
+                        'icon': 'scout-box',
+                    }))
             
             fields = super(CardCollection.ItemView, self).to_fields(
                 item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)
@@ -630,10 +638,13 @@ class CardCollection(MagiCollection):
 
                 if item.group is not 0 and item.boost_percent is not None:
                     setSubField(fields, 'leader_skill', key='value', value=string_concat(leader_skill, ', ', leader_second))
-        
-                
 
             return fields
+        
+    class ListView(MagiCollection.ListView):
+        filter_form = forms.CardFilterForm
+        per_line = 4
+        default_ordering = '-release'
 
 class SkillCollection(MagiCollection):
     queryset = models.Skill.objects.all()
@@ -646,3 +657,17 @@ class SkillCollection(MagiCollection):
     translated_fields = ('name', 'details',)
     icon = 'sparkle'
     navbar_link = False
+    permissions_required = ['manage_main_items']
+
+class SetCollection(MagiCollection):
+    queryset = models.Set.objects.all()
+    title = _('Set')
+    plural_title = _('Sets')
+    multipart = True
+    form_class = forms.SetForm
+    reportable = False
+    blockable = False
+    translated_fields = ('title', )
+    icon = 'scout-box'
+    navbar_link = False
+    permissions_required = ['manage_main_items']

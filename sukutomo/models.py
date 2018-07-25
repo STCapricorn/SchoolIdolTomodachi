@@ -243,78 +243,6 @@ class Idol(MagiModel):
     d_descriptions = models.TextField(null=True)
 
 ############################################################
-# Events
-
-class Event(MagiModel):
-    collection_name = 'event'
-    owner = models.ForeignKey(User, related_name='added_events')
-
-    title = models.CharField(_('Title'), max_length=100)
-    TITLES_CHOICES = ALL_ALT_LANGUAGES
-    d_titles = models.TextField(null=True)
-
-    banner = models.ImageField(_('Banner'), null=True)
-
-    TYPE_CHOICES = (
-        ('token', _('Token')),
-        ('sm', _('Score Match')),
-        ('mf', _('Medley Festival')),
-        ('cf', _('Challenge Festival')),
-        ('as', _('Adventure Stroll')),
-        ('fm', _('Friendly Match')),
-    )
-
-    i_type = models.PositiveIntegerField(_('Event type'), choices=i_choices(TYPE_CHOICES), null=True)
-
-    UNIT_CHOICES = (
-        u'μ\'s',
-        'Aqours',
-    )
-
-    i_unit = models.PositiveIntegerField(_('Unit'), choices=i_choices(UNIT_CHOICES), null=True)
-
-    VERSIONS_CHOICES = Account.VERSION_CHOICES
-    c_versions = models.TextField(_('Server availability'), blank=True, null=True, default='"JP"')
-
-    jp_banner = models.ImageField(string_concat(t['Japanese'], ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
-    jp_start_date = models.DateTimeField(string_concat(t['Japanese'], ' ', _('version'), ' - ', _('Beginning')), null=True)
-    jp_end_date = models.DateTimeField(string_concat(t['Japanese'], ' ', _('version'), ' - ',_('End')), null=True)
-
-    ww_banner = models.ImageField(string_concat(_('Worldwide'), ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
-    ww_start_date = models.DateTimeField(string_concat(_('Worldwide'), ' ', _('version'), ' - ', _('Beginning')), null=True)
-    ww_end_date = models.DateTimeField(string_concat(_('Worldwide'), ' ', _('version'), ' - ',_('End')), null=True)
-
-    tw_banner = models.ImageField(string_concat(_('Taiwanese'), ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
-    tw_start_date = models.DateTimeField(string_concat(_('Taiwanese'), ' ', _('version'), ' - ', _('Beginning')), null=True)
-    tw_end_date = models.DateTimeField(string_concat(_('Taiwanese'), ' ', _('version'), ' - ',_('End')), null=True)
-
-    kr_banner = models.ImageField(string_concat(_('Korean'), ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
-    kr_start_date = models.DateTimeField(string_concat(_('Korean'), ' ', _('version'), ' - ', _('Beginning')), null=True)
-    kr_end_date = models.DateTimeField(string_concat(_('Korean'), ' ', _('version'), ' - ',_('End')), null=True)
-
-    cn_banner = models.ImageField(string_concat(_('Chinese'), ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
-    cn_start_date = models.DateTimeField(string_concat(_('Chinese'), ' ', _('version'), ' - ', _('Beginning')), null=True)
-    cn_end_date = models.DateTimeField(string_concat(_('Chinese'), ' ', _('version'), ' - ',_('End')), null=True)
-
-    def get_status(self, version='JP'):
-        start_date = getattr(self, u'{}start_date'.format(Account.VERSIONS[version]['prefix']))
-        end_date = getattr(self, u'{}end_date'.format(Account.VERSIONS[version]['prefix']))
-        if not end_date or not start_date:
-            return None
-        now = timezone.now()
-        if now > end_date:
-            return 'ended'
-        elif now > start_date:
-            return 'current'
-        return 'future'
-
-    jp_status = property(lambda _s: _s.get_status())
-    ww_status = property(lambda _s: _s.get_status(version='WW'))
-    tw_status = property(lambda _s: _s.get_status(version='TW'))
-    kr_status = property(lambda _s: _s.get_status(version='KR'))
-    cn_status = property(lambda _s: _s.get_status(version='CN'))
-
-############################################################
 # Songs
 
 class Song(MagiModel):
@@ -431,8 +359,6 @@ class Song(MagiModel):
                 return True
         return False
 
-    available = property(lambda _s: _s.get_availability())
-
 ############################################################
 # Skills
 
@@ -464,6 +390,48 @@ class Skill(MagiModel):
     d_detailss = models.TextField(null=True)
 
 ############################################################
+# Sets
+
+class Set(MagiModel):
+    collection_name = 'set'
+    owner = models.ForeignKey(User, related_name='added_sets', null=True)
+
+    def __unicode__(self):
+        if self.set_type:
+            set_type = self.set_type
+        else:
+            set_type = '???'
+        if self.unit_type:
+            unit_type = self.unit_type
+        else:
+            unit_type = '???'   
+        return u'{} ({}, {})'.format(self.title, set_type, unit_type)
+
+    @property
+    def set_html(self):
+        string = string_concat('<b>', self.title)
+        if self.set_type and not self.unit_type:
+            string = string_concat(string, ' <span class="text-muted">(', self.set_type, ')</span></b>')
+        elif self.unit_type and not self.unit_type:
+            string = string_concat(string, ' <span class="text-muted">(', self.unit_type, ')</span></b>')
+        elif self.set_type and self.unit_type:
+            string = string_concat(string, ' <span class="text-muted">(', self.set_type, ', ', self.unit_type, ')</span></b>')
+        return string
+
+    title = models.CharField(_('Title'), max_length=100, unique=True)
+    TITLES_CHOICES = ALL_ALT_LANGUAGES
+    d_titles = models.TextField(null=True)
+
+    SET_TYPES = (
+        ('gacha', _('Gacha')),
+        ('event', _('Event')),
+    )
+    i_set_type =  models.PositiveIntegerField(_('Type'), choices=i_choices(SET_TYPES), null=True)
+
+    UNIT_TYPES = Idol.UNIT_CHOICES
+    i_unit_type = models.PositiveIntegerField(_('Unit'), choices=i_choices(UNIT_TYPES), null=True)
+
+############################################################
 # Cards
 
 class Card(MagiModel):
@@ -487,7 +455,7 @@ class Card(MagiModel):
 
     limited = models.BooleanField(_('Limited'), default=False)
     promo = models.BooleanField(_('Promo'), default=False)
-    support = models.BooleanField(_('Support'), default=False) # if selected, will auto-choose support skill
+    support = models.BooleanField(_('Support'), default=False)
     
     ATTRIBUTE_CHOICES = Idol.ATTRIBUTE_CHOICES
     i_attribute = models.PositiveIntegerField(_('Attribute'), choices=i_choices(ATTRIBUTE_CHOICES), null=True)
@@ -628,19 +596,79 @@ class Card(MagiModel):
 
     hp = models.PositiveIntegerField(string_concat(_('HP'), ' (', _('Unidolized'), ')'), null=True)
 
+    sets = models.ForeignKey(Set, related_name="sets", verbose_name=_('Sets'), null=True)
+
+    details = models.TextField(_('Details'), null=True)
+    DETAILS_CHOICES = ALL_ALT_LANGUAGES
+    d_detailss = models.TextField(null=True)
+    
 ############################################################
-# Sets
+# Events
 
-#class SetsCollections(MagiModel):
-#    collection_name = 'co'
-#    owner = models.ForeignKey(User, related_name='added_sets', null=True)
+class Event(MagiModel):
+    collection_name = 'event'
+    owner = models.ForeignKey(User, related_name='added_events')
 
-#    name = models.CharField(_('Name'), max_length=100, unique=True)
-#    NAMES_CHOICES = ALL_ALT_LANGUAGES
-#    d_names = models.TextField(null=True)
+    title = models.CharField(_('Title'), max_length=100)
+    TITLES_CHOICES = ALL_ALT_LANGUAGES
+    d_titles = models.TextField(null=True)
 
-#    release = models.DateTimeField(_('Release date'), null=True)
+    banner = models.ImageField(_('Banner'), null=True)
 
-#    cards = models.ManyToManyField(Card, related_name="set_cards", verbose_name=_('Cards'))
+    TYPE_CHOICES = (
+        ('token', _('Token')),
+        ('sm', _('Score Match')),
+        ('mf', _('Medley Festival')),
+        ('cf', _('Challenge Festival')),
+        ('as', _('Adventure Stroll')),
+        ('fm', _('Friendly Match')),
+    )
 
-# Based off cards, filters are determined? i.e. (Only Aquors, so it is a Aquors set! etc. etc. ?)
+    i_type = models.PositiveIntegerField(_('Event type'), choices=i_choices(TYPE_CHOICES), null=True)
+
+    UNIT_CHOICES = (
+        u'μ\'s',
+        'Aqours',
+    )
+    i_unit = models.PositiveIntegerField(_('Unit'), choices=i_choices(UNIT_CHOICES), null=True)
+
+    VERSIONS_CHOICES = Account.VERSION_CHOICES
+    c_versions = models.TextField(_('Server availability'), blank=True, null=True, default='"JP"')
+
+    jp_banner = models.ImageField(string_concat(t['Japanese'], ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
+    jp_start_date = models.DateTimeField(string_concat(t['Japanese'], ' ', _('version'), ' - ', _('Beginning')), null=True)
+    jp_end_date = models.DateTimeField(string_concat(t['Japanese'], ' ', _('version'), ' - ',_('End')), null=True)
+
+    ww_banner = models.ImageField(string_concat(_('Worldwide'), ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
+    ww_start_date = models.DateTimeField(string_concat(_('Worldwide'), ' ', _('version'), ' - ', _('Beginning')), null=True)
+    ww_end_date = models.DateTimeField(string_concat(_('Worldwide'), ' ', _('version'), ' - ',_('End')), null=True)
+
+    tw_banner = models.ImageField(string_concat(_('Taiwanese'), ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
+    tw_start_date = models.DateTimeField(string_concat(_('Taiwanese'), ' ', _('version'), ' - ', _('Beginning')), null=True)
+    tw_end_date = models.DateTimeField(string_concat(_('Taiwanese'), ' ', _('version'), ' - ',_('End')), null=True)
+
+    kr_banner = models.ImageField(string_concat(_('Korean'), ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
+    kr_start_date = models.DateTimeField(string_concat(_('Korean'), ' ', _('version'), ' - ', _('Beginning')), null=True)
+    kr_end_date = models.DateTimeField(string_concat(_('Korean'), ' ', _('version'), ' - ',_('End')), null=True)
+
+    cn_banner = models.ImageField(string_concat(_('Chinese'), ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
+    cn_start_date = models.DateTimeField(string_concat(_('Chinese'), ' ', _('version'), ' - ', _('Beginning')), null=True)
+    cn_end_date = models.DateTimeField(string_concat(_('Chinese'), ' ', _('version'), ' - ',_('End')), null=True)
+
+    def get_status(self, version='JP'):
+        start_date = getattr(self, u'{}start_date'.format(Account.VERSIONS[version]['prefix']))
+        end_date = getattr(self, u'{}end_date'.format(Account.VERSIONS[version]['prefix']))
+        if not end_date or not start_date:
+            return None
+        now = timezone.now()
+        if now > end_date:
+            return 'ended'
+        elif now > start_date:
+            return 'current'
+        return 'future'
+
+    jp_status = property(lambda _s: _s.get_status())
+    ww_status = property(lambda _s: _s.get_status(version='WW'))
+    tw_status = property(lambda _s: _s.get_status(version='TW'))
+    kr_status = property(lambda _s: _s.get_status(version='KR'))
+    cn_status = property(lambda _s: _s.get_status(version='CN'))
