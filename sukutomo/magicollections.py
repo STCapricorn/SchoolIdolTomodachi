@@ -41,19 +41,19 @@ class AccountCollection(_AccountCollection):
 IDOLS_ICONS = {
     'name': 'id',
     'japanese_name': 'id',
-    'school': 'max-bond',
-    'year': 'scoreup',
+    'school': 'school',
+    'year': 'education',
     'age': 'scoreup',
-    'birthday': 'event',
-    'height': 'id',
+    'birthday': 'birthday',
+    'height': 'measurements',
     'blood': 'hp',
-    'bust': 'id',
-    'waist': 'id',
-    'hips': 'id',
-    'hobbies': 'star',
-    'favorite_food': 'heart',
-    'least_favorite_food' : 'heart-empty',
-    'description': 'id',
+    'bust': 'measurements',
+    'waist': 'measurements',
+    'hips': 'measurements',
+    'hobbies': 'hobbies',
+    'favorite_food': 'food-like',
+    'least_favorite_food' : 'food-dislike',
+    'description': 'author',
 }
 
 IDOLS_CUTEFORM = {
@@ -88,7 +88,7 @@ class IdolCollection(MagiCollection):
     reportable = False
     blockable = False
     translated_fields = ('name', 'hobbies', 'favorite_food', 'least_favorite_food', 'description', )
-    icon = 'idolized'
+    icon = 'idol'
 
     def to_fields(self, view, item, *args, **kwargs):
 
@@ -127,7 +127,7 @@ class IdolCollection(MagiCollection):
                     'verbose_name': _('Measurements'),
                     'type': 'list',
                     'value': values,
-                    'icon': 'scoreup',
+                    'icon': 'measurements',
                     }))
             if item.school is not None:
                 exclude_fields.append('i_year')
@@ -274,7 +274,7 @@ class EventCollection(MagiCollection):
                                 date=torfc2822(end_date if status == 'current' else start_date),
                                 sentence=_('{time} left') if status == 'current' else _('Starts in {time}'),
                             ),
-                            'icon': 'times',
+                            'icon': 'hourglass',
                             'type': 'html',
                         }),
             ]
@@ -323,7 +323,7 @@ SONG_FIELDS_PER_DIFFICULTY = ['notes', 'difficulty']
 
 SONGS_ICONS = {
     'title': 'id', 'romaji':'id', 'versions':'world', 'locations':'world',
-    'unlock':'perfectlock', 'daily':'toggler', 'b_side_start': 'date',
+    'unlock':'unlock', 'daily':'toggler', 'b_side_start': 'date',
     'b_side_end': 'date', 'release':'date', 'itunes_id':'play',
     'length':'times','bpm':'hp', 'master_swipe':'index',
     'hits': 'deck', 'daily': 'trade', 'b-side': 'times',
@@ -366,7 +366,7 @@ class SongCollection(MagiCollection):
             'image_folder': 'language',
             'transform': CuteFormTransform.ImagePath,
         },
-        'availability': {
+        'available': {
             'type': CuteFormType.YesNo,
         },
         'location': {
@@ -427,7 +427,7 @@ class SongCollection(MagiCollection):
                             sentence=_('{time} left') if status == 'current' else _('Starts in {time}'),
                         ),
                         
-                        'icon': 'times',
+                        'icon': 'hourglass',
                         'type': 'html',
                     }),
                     ]
@@ -436,8 +436,8 @@ class SongCollection(MagiCollection):
                 exclude_fields.append('b_side_start')
                 exclude_fields.append('b_side_end')
 
-            availability = getattr(item, 'available')
-            if availability == 'currently available':
+            available = getattr(item, 'available')
+            if available == True:
                 av_value = True
             else:
                 av_value = False
