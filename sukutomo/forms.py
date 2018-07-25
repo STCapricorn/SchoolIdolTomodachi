@@ -1,7 +1,9 @@
 import datetime
 from magi import forms
 from django.core.validators import MinValueValidator
+from django.db.models import Q
 from django.db.models.fields import BLANK_CHOICE_DASH
+from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _, string_concat
 from magi.utils import PastOnlyValidator
 from magi.forms import AutoForm, MagiFiltersForm, MagiFilter
@@ -64,6 +66,20 @@ class EventForm(AutoForm):
 
     cn_start_date = forms.forms.DateField(label=string_concat(_('Chinese version'), ' - ', _('Beginning')), required=False)
     cn_end_date = forms.forms.DateField(label=string_concat(_('Chinese version'), ' - ', _('End')), required=False)
+
+    def save(self, commit=False):
+        instance = super(EventForm, self).save(commit=False)
+        if instance.jp_start_date:
+            instance.jp_start_date = instance.jp_start_date.replace(hour=16, minute=00)
+        if instance.jp_end_date:
+            instance.jp_end_date = instance.jp_end_date.replace(hour=15, minute=00)
+        if instance.ww_start_date:
+            instance.ww_start_date = instance.ww_start_date.replace(hour=9, minute=00)
+        if instance.ww_end_date:
+            instance.ww_end_date = instance.ww_end_date.replace(hour=8, minute=00)
+        if commit:
+            instance.save()
+        return instance
 
     class Meta:
         model = models.Event
