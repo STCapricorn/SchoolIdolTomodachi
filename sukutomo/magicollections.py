@@ -619,11 +619,13 @@ class CardCollection(MagiCollection):
                     'icon': 'center',
                 }))
 
-                if item.sets:
+                if item.in_set:
                     extra_fields.append(('set', {
                         'verbose_name': _('Set'),
-                        'type': 'html',
-                        'value': string_concat('<a href="', u'/ajax/cards/', '">', item.sets.set_html, '</a>'),
+                        'type': 'link',
+                        'ajax_link': u'/ajax/cards/?in_set={}'.format(item.in_set.id),
+                        'link': u'cards/?in_set={}'.format(item.in_set.id),
+                        'link_text': unicode(item.in_set),
                         'icon': 'scout-box',
                     }))
             

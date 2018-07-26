@@ -183,7 +183,7 @@ class CardForm(AutoForm):
 class CardFilterForm(MagiFiltersForm):
     class Meta:
         model = models.Card
-        fields = ('sets', )
+        fields = ('in_set', )
 
 class SkillForm(AutoForm):
     class Meta:

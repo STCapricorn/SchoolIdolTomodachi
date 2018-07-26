@@ -163,6 +163,8 @@ class Idol(MagiModel):
         ('shion', _('Shion Girls\' Academy')),
         ('touou', _('Touou Academy')),
         ('yg', _('Y.G. International Academy')),
+        ('hakodate', _('Hakodate Seisen Girls\' Academy')),
+        ('utx', _('UTX High School')),
         ('nijigasaki', _('Nijigasaki High School')),
         ('uranohoshi', _('Uranohoshi Girls\' High School')),
         ('otonokizaka', _('Otonokizaka Academy')),
@@ -596,7 +598,7 @@ class Card(MagiModel):
 
     hp = models.PositiveIntegerField(string_concat(_('HP'), ' (', _('Unidolized'), ')'), null=True)
 
-    sets = models.ForeignKey(Set, related_name="sets", verbose_name=_('Sets'), null=True)
+    in_set = models.ForeignKey(Set, related_name="sets", verbose_name=_('Sets'), null=True)
 
     details = models.TextField(_('Details'), null=True)
     DETAILS_CHOICES = ALL_ALT_LANGUAGES
