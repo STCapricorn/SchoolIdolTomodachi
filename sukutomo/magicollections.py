@@ -4,9 +4,15 @@ from django.utils.formats import dateformat
 from django.utils.safestring import mark_safe
 from django.utils.translation import string_concat
 from magi.item_model import getInfoFromChoices
-from magi.magicollections import MagiCollection, AccountCollection as _AccountCollection
+from magi.magicollections import MagiCollection, AccountCollection as _AccountCollection, PrizeCollection as _PrizeCollection
 from magi.utils import staticImageURL, CuteFormType, CuteFormTransform, custom_item_template, torfc2822, setSubField, jsv
 from sukutomo import forms, models
+
+############################################################
+# Prize Collection
+
+class PrizeCollection(_PrizeCollection):
+    enabled = True
 
 ############################################################
 # Account Collection
