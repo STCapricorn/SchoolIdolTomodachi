@@ -553,7 +553,6 @@ class CardCollection(MagiCollection):
     form_class = forms.CardForm
     reportable = False
     blockable = False
-    translated_fields = ('skill_name', 'details', )
     icon = 'deck'
     navbar_link_list = 'schoolidolfestival'
 

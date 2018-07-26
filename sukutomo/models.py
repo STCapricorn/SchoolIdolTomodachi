@@ -468,12 +468,9 @@ class Card(MagiModel):
     SKILL_NAMES_CHOICES = ALL_ALT_LANGUAGES
     d_skill_names = models.TextField(null=True)
 
-    #SKILL_TYPE = models.Skill.SKILL_TYPE
-    #i_skill_type = models.PositiveIntegerField(_('Skill Type'), choices=i_choices(SKILL_TYPE), null=True)
-    # ^^^ will be to make it easier on staff to sort these. Not mandatory.
     skill = models.ForeignKey(Skill, related_name="added_skills", verbose_name=_('Skill'), null=True)
     skill_details = property(lambda _s: _s.skill.details)
-    rate = models.PositiveIntegerField(_('Rate of Activation'), help_text=_('Every __ {dependency}'), null=True)
+    rate = models.PositiveIntegerField(_('Rate of Activation'), null=True)
 
     DEPENDENCY_CHOICES = (
         ('notes', _('notes')),
@@ -598,7 +595,7 @@ class Card(MagiModel):
     in_set = models.ForeignKey(Set, related_name="sets", verbose_name=_('Sets'), null=True)
 
     details = models.TextField(_('Details'), null=True)
-    DETAILS_CHOICES = ALL_ALT_LANGUAGES
+    DETAILSS_CHOICES = ALL_ALT_LANGUAGES
     d_detailss = models.TextField(null=True)
     
 ############################################################

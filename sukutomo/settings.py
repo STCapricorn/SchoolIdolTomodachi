@@ -62,6 +62,23 @@ ENABLED_PAGES['wiki'][1]['enabled'] = True
 ENABLED_PAGES['wiki'][0]['divider_before'] = True
 ENABLED_PAGES['wiki'][0]['navbar_link_list'] = 'schoolidolfestival'
 
+ENABLED_PAGES['twitter'] = {
+    'title': 'Twitter',
+    'icon': 'twitter',
+    'navbar_link_list': 'community',
+    'redirect': 'https://twitter.com/schoolidolu',
+    'new_tab': True,
+}
+
+ENABLED_PAGES['skills'] = {
+    'title': _('Skills'),
+    'staff_required': True,
+    'permissions_required': ['manage_main_items', 'translate'],
+    'icon': 'sparkle',
+    'navbar_link_list': 'staff',
+    'redirect': '/skills',
+}
+
 ENABLED_NAVBAR_LISTS = DEFAULT_ENABLED_NAVBAR_LISTS
 ENABLED_NAVBAR_LISTS['lovelive'] = {
     'title': _('LoveLive!'),
