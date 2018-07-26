@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('sukutomo', '0007_song'),
+        ('sukutomo', '0008_song'),
     ]
 
     operations = [
@@ -26,11 +26,11 @@ class Migration(migrations.Migration):
                 ('i_attribute', models.PositiveIntegerField(null=True, verbose_name='Attribute', choices=[(0, 'Smile'), (1, 'Pure'), (2, 'Cool'), (3, 'All')])),
                 ('c_versions', models.TextField(default=b'"JP"', null=True, verbose_name='Server availability', blank=True)),
                 ('release', models.DateTimeField(null=True, verbose_name='Release date')),
-                ('skill_name', models.CharField(max_length=100, null=True, verbose_name='Skill name')),
-                ('d_skill_names', models.TextField(null=True)),
-                ('rate', models.PositiveIntegerField(help_text='Every __ {dependency}', null=True, verbose_name='Rate of Activation')),
+                ('name', models.CharField(max_length=100, null=True, verbose_name='Name')),
+                ('d_names', models.TextField(null=True)),
+                ('rate', models.PositiveIntegerField(null=True, verbose_name='Rate of Activation')),
                 ('i_dependency', models.PositiveIntegerField(null=True, verbose_name='Dependency', choices=[(0, 'notes'), (1, b'PERFECTs'), (2, 'seconds'), (3, 'x combo')])),
-                ('chance', models.PositiveIntegerField(help_text='there is a __% chance', null=True, verbose_name='% Chance')),
+                ('chance', models.PositiveIntegerField(null=True, verbose_name='% Chance')),
                 ('number', models.PositiveIntegerField(null=True, verbose_name=b'{number}')),
                 ('length', models.PositiveIntegerField(null=True, verbose_name=b'{length}')),
                 ('i_center', models.PositiveIntegerField(null=True, verbose_name='Center Skill', choices=[(0, 'Princess'), (1, 'Angel'), (2, 'Empress'), (3, 'Star'), (4, 'Heart'), (5, 'Energy'), (6, 'Power')])),
@@ -60,8 +60,24 @@ class Migration(migrations.Migration):
                 ('cool_max', models.PositiveIntegerField(null=True, verbose_name='Cool (Maximum)')),
                 ('cool_max_idol', models.PositiveIntegerField(null=True, verbose_name='Cool (Idolized, Maximum)')),
                 ('hp', models.PositiveIntegerField(null=True, verbose_name='HP (Unidolized)')),
+                ('details', models.TextField(null=True, verbose_name='Details')),
+                ('d_detailss', models.TextField(null=True)),
                 ('idol', models.ForeignKey(related_name='card_idols', to='sukutomo.Idol', null=True)),
-                ('owner', models.ForeignKey(related_name='added_cards', to=settings.AUTH_USER_MODEL, null=True)),
+            ],
+            options={
+                'abstract': False,
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='Set',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('title', models.CharField(unique=True, max_length=100, verbose_name='Title')),
+                ('d_titles', models.TextField(null=True)),
+                ('i_set_type', models.PositiveIntegerField(null=True, verbose_name='Type', choices=[(0, 'Gacha'), (1, 'Event')])),
+                ('i_unit_type', models.PositiveIntegerField(null=True, verbose_name='Unit', choices=[(0, "\u03bc's"), (1, b'Aqours')])),
+                ('owner', models.ForeignKey(related_name='added_sets', to=settings.AUTH_USER_MODEL, null=True)),
             ],
             options={
                 'abstract': False,
@@ -86,14 +102,20 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='card',
-            name='skill',
-            field=models.ForeignKey(related_name='added_skills', verbose_name='Skill', to='sukutomo.Skill', null=True),
+            name='in_set',
+            field=models.ForeignKey(related_name='sets', verbose_name='Sets', to='sukutomo.Set', null=True),
             preserve_default=True,
         ),
-        migrations.AlterField(
-            model_name='account',
-            name='i_os',
-            field=models.PositiveIntegerField(null=True, verbose_name='Operating System', choices=[(0, b'android'), (1, b'ios')]),
+        migrations.AddField(
+            model_name='card',
+            name='owner',
+            field=models.ForeignKey(related_name='added_cards', to=settings.AUTH_USER_MODEL, null=True),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='card',
+            name='skill',
+            field=models.ForeignKey(related_name='added_skills', verbose_name='Skill', to='sukutomo.Skill', null=True),
             preserve_default=True,
         ),
     ]

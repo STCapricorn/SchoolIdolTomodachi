@@ -62,6 +62,8 @@ ENABLED_PAGES['wiki'][1]['enabled'] = True
 ENABLED_PAGES['wiki'][0]['divider_before'] = True
 ENABLED_PAGES['wiki'][0]['navbar_link_list'] = 'schoolidolfestival'
 
+ENABLED_PAGES['map']['navbar_link_list'] = 'community'
+
 ENABLED_PAGES['twitter'] = {
     'title': 'Twitter',
     'icon': 'twitter',
@@ -73,7 +75,7 @@ ENABLED_PAGES['twitter'] = {
 ENABLED_PAGES['skills'] = {
     'title': _('Skills'),
     'staff_required': True,
-    'permissions_required': ['manage_main_items', 'translate'],
+    'permissions_required': ['manage_main_items'],
     'icon': 'sparkle',
     'navbar_link_list': 'staff',
     'redirect': '/skills',
@@ -96,5 +98,7 @@ ENABLED_NAVBAR_LISTS['schoolidolfestival'] = {
 ENABLED_NAVBAR_LISTS['community'] = {
     'title': _('Community'),
     'icon': 'users',
-    'order': ['activity_list', 'account_list', 'map', 'donate_list', 'twitter'],
+    'order': ['account_list', 'map', 'twitter'],
 }
+
+NAVBAR_ORDERING = ['lovelive', 'schoolidolfestival', 'community', 'you', 'staff', 'more']

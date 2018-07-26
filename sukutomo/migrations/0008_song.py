@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('sukutomo', '0006_event'),
+        ('sukutomo', '0007_auto_20180726_0059'),
     ]
 
     operations = [
@@ -56,23 +56,5 @@ class Migration(migrations.Migration):
                 'abstract': False,
             },
             bases=(models.Model,),
-        ),
-        migrations.AlterField(
-            model_name='account',
-            name='i_version',
-            field=models.PositiveIntegerField(default=1, verbose_name='Version', choices=[(0, 'Japanese version'), (1, 'Worldwide version'), (2, 'Korean version'), (3, 'Chinese version'), (4, 'Taiwanese version')]),
-            preserve_default=True,
-        ),
-        migrations.AlterField(
-            model_name='idol',
-            name='d_favorite_foods',
-            field=models.TextField(null=True, verbose_name='Favorite food'),
-            preserve_default=True,
-        ),
-        migrations.AlterField(
-            model_name='idol',
-            name='i_year',
-            field=models.PositiveIntegerField(null=True, verbose_name='School year', choices=[(0, '1st year'), (1, '2nd year'), (2, '3rd year')]),
-            preserve_default=True,
         ),
     ]

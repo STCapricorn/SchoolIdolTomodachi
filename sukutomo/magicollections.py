@@ -13,6 +13,7 @@ from sukutomo import forms, models
 
 class AccountCollection(_AccountCollection):
     form_class = forms.AccountForm
+    navbar_link_list = 'community'
 
     filter_cuteform = {
         'accept_friend_requests': {
@@ -545,6 +546,9 @@ class SongCollection(MagiCollection):
             super(SongCollection.EditView, self).extra_context(context)
             self.collection._modification_extra_context(context)
 
+############################################################
+# Card Collection
+
 class CardCollection(MagiCollection):
     queryset = models.Card.objects.all()
     title = _('Card')
@@ -553,6 +557,7 @@ class CardCollection(MagiCollection):
     form_class = forms.CardForm
     reportable = False
     blockable = False
+    translated_fields = ('name', 'details')
     icon = 'deck'
     navbar_link_list = 'schoolidolfestival'
 
@@ -651,6 +656,9 @@ class CardCollection(MagiCollection):
         per_line = 4
         default_ordering = '-release'
 
+############################################################
+# Skill Collection
+
 class SkillCollection(MagiCollection):
     queryset = models.Skill.objects.all()
     title = _('Skill')
@@ -663,6 +671,9 @@ class SkillCollection(MagiCollection):
     icon = 'sparkle'
     navbar_link = False
     permissions_required = ['manage_main_items']
+
+############################################################
+# Set Collection
 
 class SetCollection(MagiCollection):
     queryset = models.Set.objects.all()
@@ -680,4 +691,3 @@ class SetCollection(MagiCollection):
         #filter_form = forms.SetFilterForm
         item_template = custom_item_template
         per_line = 4
-

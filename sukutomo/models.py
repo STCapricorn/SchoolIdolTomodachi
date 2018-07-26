@@ -31,7 +31,7 @@ class Account(BaseAccount):
         ('TW', { 'translation': _('Taiwanese version'), 'image': 'zh-hant', 'prefix': 'tw_' }),
     ))
 
-    VERSION_CHOICES = [(name, info['translation']) for name, info in VERSIONS.items()]
+    VERSION_CHOICES = [(_name, _info['translation']) for _name, _info in VERSIONS.items()]
     i_version = models.PositiveIntegerField(_('Version'), choices=i_choices(VERSION_CHOICES), default=1)
     version_image = property(getInfoFromChoices('version', VERSIONS, 'image'))
 
@@ -464,10 +464,10 @@ class Card(MagiModel):
 
     release = models.DateTimeField(_('Release date'), null=True)
 
-    skill_name = models.CharField(_('Skill name'), max_length=100, null=True)
-    SKILL_NAMES_CHOICES = ALL_ALT_LANGUAGES
-    d_skill_names = models.TextField(null=True)
-
+    name = models.CharField(_('Name'), max_length=100, null=True)
+    NAMES_CHOICES = ALL_ALT_LANGUAGES
+    d_names = models.TextField(null=True)
+    
     skill = models.ForeignKey(Skill, related_name="added_skills", verbose_name=_('Skill'), null=True)
     skill_details = property(lambda _s: _s.skill.details)
     rate = models.PositiveIntegerField(_('Rate of Activation'), null=True)
@@ -480,7 +480,7 @@ class Card(MagiModel):
     )
     i_dependency = models.PositiveIntegerField(_('Dependency'), choices=i_choices(DEPENDENCY_CHOICES), null=True)
     
-    chance = models.PositiveIntegerField(_('% Chance'), help_text=_('there is a __% chance'), null=True)
+    chance = models.PositiveIntegerField(_('% Chance'), null=True)
     number = models.PositiveIntegerField('{number}', null=True)
     length = models.PositiveIntegerField('{length}', null=True)
 
@@ -535,7 +535,7 @@ class Card(MagiModel):
         }),
         ])
             
-    CENTER_CHOICES = [(name, info['translation']) for name, info in CENTERS.items()]
+    CENTER_CHOICES = [(_name, _info['translation']) for _name, _info in CENTERS.items()]
     i_center = models.PositiveIntegerField(_('Center Skill'), choices=i_choices(CENTER_CHOICES), null=True)
     center_focus = property(getInfoFromChoices('center', CENTERS, 'focus'))
     center_off_attribute = property(getInfoFromChoices('center', CENTERS, 'off_attribute'))
