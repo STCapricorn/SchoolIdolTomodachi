@@ -120,7 +120,7 @@ class Idol(MagiModel):
         return self.names.get(get_language(), self.name)
 
     def __unicode__(self):
-      return self.t_name
+        return self.t_name
 
     japanese_name = models.CharField(string_concat(_('Name'), ' (', t['Japanese'], ')'), max_length=100, null=True)
     image = models.ImageField(_('Image'), upload_to=uploadItem('i'), null=True)
@@ -274,8 +274,11 @@ class Song(MagiModel):
     TITLES_CHOICES = ALL_ALT_LANGUAGES
     d_titles = models.TextField(null=True)
 
+    def __unicode__(self):
+        return self.t_title
+
     romaji = models.CharField(string_concat(_('Title'), ' (', _('Romaji'), ')'), max_length=100, null=True)
-    cover = models.ImageField(_('Song Cover'), null=True)
+    cover = models.ImageField(_('Song Cover'), upload_to=uploadItem('s'), null=True)
 
     ATTRIBUTE_CHOICES = (
         ('smile', _('Smile')),
@@ -369,10 +372,10 @@ class Skill(MagiModel):
     owner = models.ForeignKey(User, related_name='added_skills', null=True)
 
     def __unicode__(self):
-        return u'{}'.format(self.name)
+        return u'{}'.format(self.t_name)
 
     def card_html(self):
-        return string_concat('<b>', self.name, ' <span class="text-muted">(', self.skill_type, ')</span></b>')
+        return string_concat('<b>', self.t_name, ' <span class="text-muted">(', self.skill_type, ')</span></b>')
 
     name = models.CharField(_('Name'), max_length=100, unique=True)
     NAMES_CHOICES = ALL_ALT_LANGUAGES
@@ -407,7 +410,7 @@ class Set(MagiModel):
             unit_type = self.unit_type
         else:
             unit_type = '???'   
-        return u'{} ({}, {})'.format(self.title, set_type, unit_type)
+        return u'{} ({}, {})'.format(self.t_title, set_type, unit_type)
 
     @property
     def cards_url(self):
@@ -438,7 +441,16 @@ class Card(MagiModel):
     owner = models.ForeignKey(User, related_name='added_cards', null=True)
 
     def __unicode__(self):
-      return u'#{}'.format(self.card_id)
+        rarity = ''
+        idol = ''
+        attribute = ''
+        if self.rarity:
+            rarity=self.rarity
+        if self.idol:
+            idol=self.idol
+        if self.attribute:
+            attribute = self.t_attribute
+        return u'#{} {} {} {}'.format(self.card_id, attribute, rarity, idol)
 
     card_id = models.PositiveIntegerField(_('ID'), unique=True)
     idol = models.ForeignKey(Idol, related_name='card_idols', null=True)
@@ -557,26 +569,26 @@ class Card(MagiModel):
     i_group = models.PositiveIntegerField(_('Boost Group'), choices=i_choices(GROUP_BOOST), null=True)
     boost_percent = models.PositiveIntegerField(_('Boost Percentage'), null=True)
 
-    image = models.ImageField(_('Image'), upload_to=uploadItem('i'), null=True)
-    image_idol = models.ImageField(string_concat(_('Image'), ' (', _('Idolized'), ')'), upload_to=uploadItem('i'), null=True)
+    image = models.ImageField(_('Image'), upload_to=uploadItem('c'), null=True)
+    image_idol = models.ImageField(string_concat(_('Image'), ' (', _('Idolized'), ')'), upload_to=uploadItem('c'), null=True)
 
-    old_image = models.ImageField(string_concat(_('Image'), ' (', _('Old'), ')'), upload_to=uploadItem('i'), null=True)
-    old_image_idol = models.ImageField(string_concat(_('Image'), ' (', _('Old'), ', ', _('Idolized'), ')'), upload_to=uploadItem('i'), null=True)
+    old_image = models.ImageField(string_concat(_('Image'), ' (', _('Old'), ')'), upload_to=uploadItem('c'), null=True)
+    old_image_idol = models.ImageField(string_concat(_('Image'), ' (', _('Old'), ', ', _('Idolized'), ')'), upload_to=uploadItem('c'), null=True)
 
-    icon = models.ImageField(_('Icon'), upload_to=uploadItem('i'), null=True)
-    icon_idol = models.ImageField(string_concat(_('Icon'), ' (', _('Idolized'), ')'), upload_to=uploadItem('i'), null=True)
+    icon = models.ImageField(_('Icon'), upload_to=uploadItem('c'), null=True)
+    icon_idol = models.ImageField(string_concat(_('Icon'), ' (', _('Idolized'), ')'), upload_to=uploadItem('c'), null=True)
 
-    old_icon = models.ImageField(string_concat(_('Icon'), ' (', _('Old'), ')'), upload_to=uploadItem('i'), null=True)
-    old_icon_idol = models.ImageField(string_concat(_('Icon'), ' (', _('Old'), ', ', _('Idolized'), ')'), upload_to=uploadItem('i'), null=True)
+    old_icon = models.ImageField(string_concat(_('Icon'), ' (', _('Old'), ')'), upload_to=uploadItem('c'), null=True)
+    old_icon_idol = models.ImageField(string_concat(_('Icon'), ' (', _('Old'), ', ', _('Idolized'), ')'), upload_to=uploadItem('c'), null=True)
 
-    transparent = models.ImageField(_('Transparent'), upload_to=uploadItem('i'), null=True)
-    transparent_idol = models.ImageField(string_concat(_('Transparent'), ' (', _('Idolized'), ')'), upload_to=uploadItem('i'), null=True)
+    transparent = models.ImageField(_('Transparent'), upload_to=uploadItem('c'), null=True)
+    transparent_idol = models.ImageField(string_concat(_('Transparent'), ' (', _('Idolized'), ')'), upload_to=uploadItem('c'), null=True)
 
-    art = models.ImageField(_('Art'), upload_to=uploadItem('i'), null=True)
-    art_idol = models.ImageField(string_concat(_('Art'), ' (', _('Idolized'), ')'), upload_to=uploadItem('i'), null=True)
+    art = models.ImageField(_('Art'), upload_to=uploadItem('c'), null=True)
+    art_idol = models.ImageField(string_concat(_('Art'), ' (', _('Idolized'), ')'), upload_to=uploadItem('ic'), null=True)
 
-    old_art = models.ImageField(string_concat(_('Art'), ' (', _('Old'), ')'), upload_to=uploadItem('i'), null=True)
-    old_art_idol = models.ImageField(string_concat(_('Art'), ' (', _('Old'), ', ', _('Idolized'), ')'), upload_to=uploadItem('i'), null=True)
+    old_art = models.ImageField(string_concat(_('Art'), ' (', _('Old'), ')'), upload_to=uploadItem('c'), null=True)
+    old_art_idol = models.ImageField(string_concat(_('Art'), ' (', _('Old'), ', ', _('Idolized'), ')'), upload_to=uploadItem('ic'), null=True)
 
     smile_min = models.PositiveIntegerField(string_concat(_('Smile'), ' (', _('Minimum'), ')'), null=True)
     smile_max = models.PositiveIntegerField(string_concat(_('Smile'), ' (', _('Maximum'), ')'), null=True)
@@ -609,7 +621,10 @@ class Event(MagiModel):
     TITLES_CHOICES = ALL_ALT_LANGUAGES
     d_titles = models.TextField(null=True)
 
-    banner = models.ImageField(_('Banner'), null=True)
+    def __unicode__(self):
+        return u'{}'.format(self.t_title)
+
+    banner = models.ImageField(_('Banner'), upload_to=uploadItem('e'), null=True)
 
     TYPE_CHOICES = (
         ('token', _('Token')),
