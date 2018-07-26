@@ -3,6 +3,7 @@ from django.conf import settings as django_settings
 from django.utils.translation import ugettext_lazy as _
 from sukutomo import models
 from magi.utils import tourldash
+from magi.default_settings import DEFAULT_ENABLED_NAVBAR_LISTS
 
 SITE_NAME = 'LoveLive! School Idol Tomodachi'
 SITE_URL = 'http://schoolido/lu/'
@@ -53,3 +54,23 @@ FAVORITE_CHARACTER_TO_URL = lambda link: '/idol/{pk}/{name}/'.format(pk=link.raw
 # ACTIVITY_TAGS
 # EMAIL_IMAGE
 # ENABLED_PAGES: ur pairs
+
+ENABLED_NAVBAR_LISTS = DEFAULT_ENABLED_NAVBAR_LISTS
+ENABLED_NAVBAR_LISTS['lovelive'] = {
+    'title': _('LoveLive!'),
+    'icon': 'heart',
+    'order': ['idol_list', 'song_list'],
+}
+ENABLED_NAVBAR_LISTS['schoolidolfestival'] = {
+    'title': _('School Idol Festival'),
+    'icon': 'music',
+    'order': [
+        'card_list', 'set_lis', 'event_list',
+        'wiki',
+    ],
+}
+ENABLED_NAVBAR_LISTS['community'] = {
+    'title': _('Community'),
+    'icon': 'users',
+    'order': ['activity_list', 'account_list', 'map', 'donate_list', 'twitter'],
+}

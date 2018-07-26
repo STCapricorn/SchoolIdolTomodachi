@@ -410,15 +410,12 @@ class Set(MagiModel):
         return u'{} ({}, {})'.format(self.title, set_type, unit_type)
 
     @property
-    def set_html(self):
-        string = string_concat('<b>', self.title)
-        if self.set_type and not self.unit_type:
-            string = string_concat(string, ' <span class="text-muted">(', self.set_type, ')</span></b>')
-        elif self.unit_type and not self.unit_type:
-            string = string_concat(string, ' <span class="text-muted">(', self.unit_type, ')</span></b>')
-        elif self.set_type and self.unit_type:
-            string = string_concat(string, ' <span class="text-muted">(', self.set_type, ', ', self.unit_type, ')</span></b>')
-        return string
+    def cards_url(self):
+        return u'/cards/?in_set={}'.format(self.id)
+
+    @property
+    def ajax_cards_url(self):
+        return u'/ajax/cards/?in_set={}'.format(self.id)
 
     title = models.CharField(_('Title'), max_length=100, unique=True)
     TITLES_CHOICES = ALL_ALT_LANGUAGES

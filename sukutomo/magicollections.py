@@ -89,6 +89,7 @@ class IdolCollection(MagiCollection):
     blockable = False
     translated_fields = ('name', 'hobbies', 'favorite_food', 'least_favorite_food', 'description', )
     icon = 'idol'
+    navbar_link_list = 'lovelive'
 
     def to_fields(self, view, item, *args, **kwargs):
 
@@ -218,6 +219,7 @@ class EventCollection(MagiCollection):
     blockable = False
     translated_fields = ('title', )
     icon = 'event'
+    navbar_link_list = 'schoolidolfestival'
 
     _version_images = { _k: _v['image'] for _k, _v in models.Account.VERSIONS.items() }
     _version_prefixes = { _k: _v['prefix'] for _k, _v in models.Account.VERSIONS.items() }
@@ -340,6 +342,7 @@ class SongCollection(MagiCollection):
     blockable = False
     translated_fields = ('title', )
     icon = 'song'
+    navbar_link_list = 'lovelive'
 
     _version_images = { _k: _v['image'] for _k, _v in models.Account.VERSIONS.items() }
     _version_prefixes = { _k: _v['prefix'] for _k, _v in models.Account.VERSIONS.items() }
@@ -552,6 +555,7 @@ class CardCollection(MagiCollection):
     blockable = False
     translated_fields = ('skill_name', 'details', )
     icon = 'deck'
+    navbar_link_list = 'schoolidolfestival'
 
     class ItemView(MagiCollection.ItemView):        
         def to_fields(self, item, order=None, extra_fields=None, exclude_fields=None, *args, **kwargs):
@@ -623,8 +627,8 @@ class CardCollection(MagiCollection):
                     extra_fields.append(('set', {
                         'verbose_name': _('Set'),
                         'type': 'link',
-                        'ajax_link': u'/ajax/cards/?in_set={}'.format(item.in_set.id),
-                        'link': u'cards/?in_set={}'.format(item.in_set.id),
+                        'ajax_link': item.in_set.ajax_cards_url,
+                        'link': item.in_set.cards_url,
                         'link_text': unicode(item.in_set),
                         'icon': 'scout-box',
                     }))
@@ -671,5 +675,10 @@ class SetCollection(MagiCollection):
     blockable = False
     translated_fields = ('title', )
     icon = 'scout-box'
-    navbar_link = False
-    permissions_required = ['manage_main_items']
+    navbar_link_list = 'schoolidolfestival'
+
+    class ListView(MagiCollection.ListView):
+        #filter_form = forms.SetFilterForm
+        item_template = custom_item_template
+        per_line = 4
+

@@ -1,0 +1,7 @@
+﻿{% with set=item %}
+<div style="text-align: center;vertical-align:center;">
+  <a href="{{ set.cards_url }}" data-ajax-url="{{ set.ajax_cards_url }}" data-ajax-title="{{ set }}">
+  {{ set }}
+  </a>
+</div>
+{% endwith %}
