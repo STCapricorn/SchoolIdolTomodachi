@@ -83,8 +83,8 @@ class Account(BaseAccount):
 
     # Special
 
-    transfer_code = models.CharField(_('Transfer Code'), max_length=100, help_text=_('It\'s important to always have an active transfer code, since it will allow you to retrieve your account in case you loose your device. We can store it for you here: only you will be able to see it. To generate it, go to the settings and use the first button below the one to change your name in the first tab.'))
-    fake = models.BooleanField(_('Fake'), default=False)
+    transfer_code = models.CharField('Transfer Code', max_length=100, help_text='It\'s important to always have an active transfer code, since it will allow you to retrieve your account in case you loose your device. We can store it for you here: only you will be able to see it. To generate it, go to the settings and use the first button below the one to change your name in the first tab.')
+    fake = models.BooleanField('Fake', default=False)
 
     #verified = models.PositiveIntegerField(_('Verified'), default=0, choices=VERIFIED_CHOICES)
     #default_tab = models.CharField(_('Default tab'), max_length=30, choices=ACCOUNT_TAB_CHOICES, help_text=_('What people see first when they take a look at your account.'), default='deck')
@@ -250,7 +250,7 @@ class Event(MagiModel):
     TITLES_CHOICES = ALL_ALT_LANGUAGES
     d_titles = models.TextField(null=True)
 
-    banner = models.ImageField(_('Banner'), null=True)
+    image = models.ImageField(_('Image'), null=True)
 
     TYPE_CHOICES = (
         ('token', _('Token')),
@@ -273,25 +273,25 @@ class Event(MagiModel):
     VERSIONS_CHOICES = Account.VERSION_CHOICES
     c_versions = models.TextField(_('Server availability'), blank=True, null=True, default='"JP"')
 
-    jp_banner = models.ImageField(string_concat(t['Japanese'], ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
-    jp_start_date = models.DateTimeField(string_concat(t['Japanese'], ' ', _('version'), ' - ', _('Beginning')), null=True)
-    jp_end_date = models.DateTimeField(string_concat(t['Japanese'], ' ', _('version'), ' - ',_('End')), null=True)
+    jp_image = models.ImageField(string_concat(_('Japanese version'), '-',_('Image')), upload_to=uploadItem('e'), null=True)
+    jp_start_date = models.DateTimeField(string_concat(_('Japanese version'), ' - ', _('Beginning')), null=True)
+    jp_end_date = models.DateTimeField(string_concat(_('Japanese version'), ' - ',_('End')), null=True)
 
-    ww_banner = models.ImageField(string_concat(_('Worldwide'), ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
-    ww_start_date = models.DateTimeField(string_concat(_('Worldwide'), ' ', _('version'), ' - ', _('Beginning')), null=True)
-    ww_end_date = models.DateTimeField(string_concat(_('Worldwide'), ' ', _('version'), ' - ',_('End')), null=True)
+    ww_image = models.ImageField(string_concat(_('Worldwide version'), '-',_('Image')), upload_to=uploadItem('e'), null=True)
+    ww_start_date = models.DateTimeField(string_concat(_('Worldwide version'), ' - ', _('Beginning')), null=True)
+    ww_end_date = models.DateTimeField(string_concat(_('Worldwide version'), ' - ',_('End')), null=True)
 
-    tw_banner = models.ImageField(string_concat(_('Taiwanese'), ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
-    tw_start_date = models.DateTimeField(string_concat(_('Taiwanese'), ' ', _('version'), ' - ', _('Beginning')), null=True)
-    tw_end_date = models.DateTimeField(string_concat(_('Taiwanese'), ' ', _('version'), ' - ',_('End')), null=True)
+    tw_image = models.ImageField(string_concat(_('Taiwanese version'), '-', _('Image')), upload_to=uploadItem('e'), null=True)
+    tw_start_date = models.DateTimeField(string_concat(_('Taiwanese version'), ' - ', _('Beginning')), null=True)
+    tw_end_date = models.DateTimeField(string_concat(_('Taiwanese version'), ' - ',_('End')), null=True)
 
-    kr_banner = models.ImageField(string_concat(_('Korean'), ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
-    kr_start_date = models.DateTimeField(string_concat(_('Korean'), ' ', _('version'), ' - ', _('Beginning')), null=True)
-    kr_end_date = models.DateTimeField(string_concat(_('Korean'), ' ', _('version'), ' - ',_('End')), null=True)
+    kr_image = models.ImageField(string_concat(_('Korean version'), '-',_('Image')), upload_to=uploadItem('e'), null=True)
+    kr_start_date = models.DateTimeField(string_concat(_('Korean version'), ' - ', _('Beginning')), null=True)
+    kr_end_date = models.DateTimeField(string_concat(_('Korean version'), ' - ',_('End')), null=True)
 
-    cn_banner = models.ImageField(string_concat(_('Chinese'), ' ', _('version'), '-',_('Banner')), upload_to=uploadItem('e'), null=True)
-    cn_start_date = models.DateTimeField(string_concat(_('Chinese'), ' ', _('version'), ' - ', _('Beginning')), null=True)
-    cn_end_date = models.DateTimeField(string_concat(_('Chinese'), ' ', _('version'), ' - ',_('End')), null=True)
+    cn_image = models.ImageField(string_concat(_('Chinese version'), '-',_('Image')), upload_to=uploadItem('e'), null=True)
+    cn_start_date = models.DateTimeField(string_concat(_('Chinese version'), ' - ', _('Beginning')), null=True)
+    cn_end_date = models.DateTimeField(string_concat(_('Chinese version'), ' - ',_('End')), null=True)
 
     def get_status(self, version='JP'):
         start_date = getattr(self, u'{}start_date'.format(Account.VERSIONS[version]['prefix']))

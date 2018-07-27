@@ -278,7 +278,7 @@ class EventCollection(MagiCollection):
                     end_date = getattr(item, u'{}end_date'.format(version_details['prefix']))
                     extra_fields += [
                         (u'{}countdown'.format(version_details['prefix']), {
-                            'verbose_name': string_concat(version_details['translation'], ' ',  _('version'), ' - ', _('Countdown')),
+                            'verbose_name': string_concat(version_details['translation'], ' - ', _('Countdown')),
                             'value': mark_safe(u'<span class="fontx1-5 countdown" data-date="{date}" data-format="{sentence}"></h4>').format(
                                 date=torfc2822(end_date if status == 'current' else start_date),
                                 sentence=_('{time} left') if status == 'current' else _('Starts in {time}'),
