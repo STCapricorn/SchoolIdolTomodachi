@@ -44,6 +44,8 @@ USER_COLORS = [
     ('all', 'All', 'btn-all', '#8f56cc'),
 ]
 
+SITE_NAV_LOGO = 'SchoolIdolTomodachi.png'
+
 # todo
 # SITE_LOGO = Path of the image displayed on the homepage.	value of SITE_IMAGE
 # FAVORITE_CHARACTERS = django_settings.FAVORITE_CHARACTERS

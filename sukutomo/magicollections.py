@@ -402,6 +402,7 @@ class SongCollection(MagiCollection):
         return fields
 
     class ItemView(MagiCollection.ItemView):
+        top_illustration = 'include/topSongItem'
         
         def to_fields(self, item, order=None, extra_fields=None, exclude_fields=None, *args, **kwargs):
             if extra_fields is None: extra_fields = []
@@ -490,12 +491,17 @@ class SongCollection(MagiCollection):
                 exclude_fields.append(difficultynote)
                 exclude_fields.append(difficultystar)
 
+            exclude_fields.append('title')
             exclude_fields.append('romaji')
-            exclude_fields.append('b_side_master')
+            exclude_fields.append('cover')
+            exclude_fields.append('i_attribute')
+            exclude_fields.append('i_unit')
+            exclude_fields.append('i_subunit')
             exclude_fields.append('c_locations')
+            exclude_fields.append('b_side_master')
             exclude_fields.append('master_swipe')
 
-            order = ['cover', 'title', 'attribute', 'unit', 'subunit', 'itunes_id', 'length', 'bpm', 'c_versions', 'availability', 'unlock',
+            order = ['itunes_id', 'length', 'bpm', 'c_versions', 'availability', 'unlock',
                      'daily', 'countdown', 'b_side_start', 'b_side_end', 'easy', 'normal', 'hard', 'expert',
                      'master', 'songwriters', 'release'] + order
 
@@ -525,6 +531,7 @@ class SongCollection(MagiCollection):
         
     class ListView(MagiCollection.ListView):
         filter_form = forms.SongFilterForm
+        item_template = custom_item_template
         per_line = 4
         default_ordering = '-release'
         ajax_pagination_callback = 'loadSongs'
@@ -555,6 +562,41 @@ class SongCollection(MagiCollection):
 ############################################################
 # Card Collection
 
+CARDS_ICONS = {
+    'name': 'id', 'card_id': 'id', 'versions': 'world', 'release': 'date',
+    'images': 'pictures', 'icons': 'pictures', 'transparents': 'pictures',
+    'art': 'pictures', 'hp': 'hp', 'details': 'author',
+}
+
+CARD_IMAGES = {
+    ('image', _('Images')),
+    ('icon', _('Icons')),
+    ('transparent', _('Transparents')),
+    ('art', _('Art')),
+}
+
+CARDS_CUTEFORM = {
+    'i_unit': {
+    },
+    'i_subunit': {
+        'image_folder': 'i_subunit',
+        'title': _('Subunit'),
+        'extra_settings': {
+            'modal': 'true',
+            'modal-text': 'true',
+        },
+    },
+    'i_attribute': {
+    },
+    'i_year': {
+        'type': CuteFormType.HTML,
+    },
+    'i_rarity': {
+        'image_folder': 'rarity_3',
+        'title': _('Rarity'),
+    },
+}
+
 class CardCollection(MagiCollection):
     queryset = models.Card.objects.all()
     title = _('Card')
@@ -567,7 +609,28 @@ class CardCollection(MagiCollection):
     icon = 'deck'
     navbar_link_list = 'schoolidolfestival'
 
-    class ItemView(MagiCollection.ItemView):        
+    filter_cuteform = CARDS_CUTEFORM
+
+    def to_fields(self, view, item, *args, **kwargs):
+
+        if item.attribute:
+            rarityfolder='rarity_' + str(item.i_attribute)
+        else:
+            rarityfolder='rarity_3'
+
+        fields = super(CardCollection, self).to_fields(view, item, *args, icons=CARDS_ICONS,  images={
+                'attribute': staticImageURL(item.i_attribute, folder='i_attribute', extension='png'),
+                'rarity': staticImageURL(item.i_rarity, folder=rarityfolder, extension='png'),
+        }, **kwargs)
+
+        setSubField(fields, 'release', key='timezones', value=['Asia/Tokyo'])
+        setSubField(fields, 'card_id', key='type', value='text')
+        setSubField(fields, 'card_id', key='value', value=u'#{}'.format(item.card_id))
+        return fields
+
+    class ItemView(MagiCollection.ItemView):
+        top_illustration = 'items/cardItem'
+        
         def to_fields(self, item, order=None, extra_fields=None, exclude_fields=None, *args, **kwargs):
             if extra_fields is None: extra_fields = []
             if exclude_fields is None: exclude_fields = []
@@ -578,7 +641,8 @@ class CardCollection(MagiCollection):
                 extra_fields.append(('idol_details', {
                     'verbose_name': _('Idol'),
                     'type': 'html',
-                    'value': string_concat('<a href="', item.idol.item_url, '">', item.idol.t_name, '<img class="idol-small-image" src="', item.idol.image_url,'"></img></a>'),
+                    'value': string_concat('<a href="', item.idol.item_url, '"data-ajax-url="', item.idol.ajax_item_url,
+                        '"data-ajax-title="', item.idol, '">', item.idol.t_name, '<img class="idol-small-image" src="', item.idol.image_url,'"></img></a>'),
                     'icon': 'idol',
                 }))
                 
@@ -642,6 +706,72 @@ class CardCollection(MagiCollection):
                         'link_text': unicode(item.in_set),
                         'icon': 'scout-box',
                     }))
+
+            ## images
+            for image, verbose_name in CARD_IMAGES:
+                if getattr(item, image) and image is not 'transparent':
+                    extra_fields.append((u'{}s'.format(image), {
+                        'verbose_name': verbose_name,
+                        'type': 'images_links',
+                        'images': [{
+                            'value': image_url,
+                            'link': image_url,
+                            'verbose_name': verbose_name,
+                            'link_text': verbose_name,
+                        } for image_url in [
+                            (getattr(item, u'{}_url'.format(image))),
+                            (getattr(item, u'{}_idol_url'.format(image))),
+                            (getattr(item, u'old_{}_url'.format(image))),
+                            (getattr(item, u'old_{}_idol_url'.format(image))),
+                        ] if image_url],
+                        'icon': 'pictures',
+                    }))
+                    exclude_fields.append(image)
+                    exclude_fields.append(image + '_idol')
+                    exclude_fields.append('old_' + image)
+                    exclude_fields.append('old_' + image + '_idol')
+                elif getattr(item, image):
+                    extra_fields.append((u'{}s'.format(image), {
+                        'verbose_name': verbose_name,
+                        'type': 'images_links',
+                        'images': [{
+                            'value': image_url,
+                            'link': image_url,
+                            'verbose_name': verbose_name,
+                            'link_text': verbose_name,
+                        } for image_url in [
+                            (getattr(item, u'{}_url'.format(image))),
+                            (getattr(item, u'{}_idol_url'.format(image))),
+                        ] if image_url],
+                        'icon': 'pictures',
+                    }))
+                    exclude_fields.append(image)
+                    exclude_fields.append(image + '_idol')
+
+            exclude_fields.append('limited')
+            exclude_fields.append('promo')
+            exclude_fields.append('support')
+            exclude_fields.append('rate')
+            exclude_fields.append('i_dependency')
+            exclude_fields.append('chance')
+            exclude_fields.append('number')
+            exclude_fields.append('length')
+            exclude_fields.append('i_center')
+            exclude_fields.append('i_group')
+            exclude_fields.append('boost_percent')
+##            exclude_fields.append('smile_min')
+##            exclude_fields.append('smile_max')
+##            exclude_fields.append('smile_max_idol')
+##            exclude_fields.append('pure_min')
+##            exclude_fields.append('pure_max')
+##            exclude_fields.append('pure_max_idol')
+##            exclude_fields.append('cool_min')
+##            exclude_fields.append('cool_max')
+##            exclude_fields.append('cool_max_idol')
+##            exclude_fields.append('hp')
+
+            order = ['card_id', 'name', 'idol_details', 'i_rarity', 'i_attribute', 'c_versions', 'release', 'set', 'main_skill',
+                     'leader_skill', 'icons', 'arts', 'transparents', 'details'] + order
             
             fields = super(CardCollection.ItemView, self).to_fields(
                 item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)
@@ -659,8 +789,18 @@ class CardCollection(MagiCollection):
         
     class ListView(MagiCollection.ListView):
         filter_form = forms.CardFilterForm
-        per_line = 4
+        item_template = custom_item_template
+        per_line = 3
         default_ordering = '-release'
+
+    class AddView(MagiCollection.AddView):
+        staff_required = True
+        permissions_required = ['manage_main_items']
+
+    class EditView(MagiCollection.EditView):
+        staff_required = True
+        permissions_required = ['manage_main_items']
+        allow_delete = True
 
 ############################################################
 # Skill Collection
@@ -677,6 +817,15 @@ class SkillCollection(MagiCollection):
     icon = 'sparkle'
     navbar_link = False
     permissions_required = ['manage_main_items']
+
+    class AddView(MagiCollection.AddView):
+        staff_required = True
+        permissions_required = ['manage_main_items']
+
+    class EditView(MagiCollection.EditView):
+        staff_required = True
+        permissions_required = ['manage_main_items']
+        allow_delete = True
 
 ############################################################
 # Set Collection
@@ -697,3 +846,12 @@ class SetCollection(MagiCollection):
         #filter_form = forms.SetFilterForm
         item_template = custom_item_template
         per_line = 4
+
+    class AddView(MagiCollection.AddView):
+        staff_required = True
+        permissions_required = ['manage_main_items']
+
+    class EditView(MagiCollection.EditView):
+        staff_required = True
+        permissions_required = ['manage_main_items']
+        allow_delete = True

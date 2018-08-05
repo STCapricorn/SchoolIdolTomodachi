@@ -1,0 +1,50 @@
+﻿{% with card=item %}
+<div class="center-align-div">
+  <a href="{{ card.item_url }}" data-ajax-url="{{ card.ajax_item_url }}" data-ajax-title="{{ card }}">
+    {% if card.image or card.image_idol %}
+      {% if card.image %}<img class="card-list img-responsive" src="{{ card.image_url }}" alt="{{ card }}" />{% endif %}{% if card.image_idol %}<img class="card-list img-responsive" src="{{ card.image_idol_url }}" alt="{{ card }}" />
+    {% endif %}
+    {% else %}
+      <img class="card-list img-responsive" src="/static/img/empty_card.png" alt="{{ card }}" />
+    {% endif %}
+  </a>
+</div>
+{% if current == 'card_item' or current == 'card_item_ajax' %}
+{% load l10n %}
+<div class="card-statistics">
+  <div class="btn-group center-align" data-toggle="buttons" data-control-tabs="card-{{ card.id }}">
+    {% for level in card.levels %}
+    <label class="btn active" style="width: 33.333333333%" data-open-tab="card-{{ card.id }}">
+      <input type="radio" checked>{{ level }}</input>
+    </label>
+     {% endfor %}
+  </div>
+</div>
+<div class="tab-content" data-tabs="card-{{ card.id }}">
+{% for status, stats in card.stats %}
+      <div class="tab-pane active" data-tab="card-{{ card.id }}-{{status}}">
+{% for field, localized, value, max, percent in stats %}
+	<div class="row">
+	  <div class="col-xs-4">localized</div>
+	  <div class="col-xs-2 text-right">value</div>
+	  <div class="col-xs-6">
+	    <div class="progress">
+	      <div class="progress-bar progress-bar progress-bar-rarity-{{ card.i_rarity }} progress-bar-striped"
+		   role="progressbar"
+		   style="width: {{percent}}%;">
+	      </div>
+	    </div>
+	  </div>
+{% endfor %}
+	</div>
+{% endfor %}
+      <div class="tab-pane active" data-tab="card-{{ card.id }}">
+	<div class="row">
+	  <div class="col-xs-4">um</div>
+	  <div class="col-xs-2 text-right">{{ card.hp }}</div>
+	  </div>
+	  </div>
+	</div>
+      </div>
+{% endif %}
+{% endwith %}

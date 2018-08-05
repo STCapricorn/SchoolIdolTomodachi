@@ -455,14 +455,99 @@ class Card(MagiModel):
     card_id = models.PositiveIntegerField(_('ID'), unique=True)
     idol = models.ForeignKey(Idol, related_name='card_idols', null=True)
 
-    RARITY_CHOICES = (
-        'N',
-        'R',
-        'SR',
-        'SSR',
-        'UR',
-    )
+    RARITY = OrderedDict([
+       ('N', {
+           'max': 30,
+           'max_idol': 40,
+        }),
+        ('R', {
+            'max': 40,
+            'max_idol': 60,
+        }),
+        ('SR', {
+            'max': 60,
+            'max_idol': 80,
+        }),
+        ('SSR', {
+            'max': 70,
+            'max_idol': 90,
+        }),
+        ('UR', {
+            'max': 80,
+            'max_idol': 100,
+        }),
+    ])
+    RARITY_CHOICES = [(_name) for _name, _info in RARITY.items()]
+    RARITY_LEVELS = [(_name, _info) for _name, _info in RARITY.items()]
     i_rarity =  models.PositiveIntegerField(_('Rarity'), choices=i_choices(RARITY_CHOICES), null=True)
+
+    @property
+    def unidolized(self):
+        for unidol_field in self.UNIDOLIZED_FIELDS:
+            if getattr(self, unidol_field):
+                return True
+        return False
+
+    @property
+    def idolized(self):
+        for idol_field in self.IDOLIZED_FIELDS:
+            if getattr(self, idol_field):
+                return True
+        return False
+
+    @property
+    def levels(self):
+        level_return = []
+        for _rarity, _info in self.RARITY_LEVELS:
+            if self.rarity is _rarity:
+                if self.unidolized:
+                    level_return += [
+                        ('_max', _('Level {}').format(_info['max'])),
+                    ]
+                    
+                if self.idolized:
+                    level_return += [
+                        ('_max_idol', _('Level {}').format(_info['max_idol'])),
+                    ]
+        level_return = [
+            ('_min', _('Level {}').format(1)),
+        ] + level_return
+        return level_return
+
+    @property
+    def stats(self):
+        local_stats = ['a', 'b']
+        for _status, _localized in self.levels:
+            local_stats = [
+                (_status, [(
+                    _field,
+                    _localized,
+                    getattr(self, _field + _status),
+                    django_settings.MAX_STATS[_field + _status],
+                    (getattr(self, _field + _status) / (django_settings.MAX_STATS[_field + _status] or 1)) * 100,
+                ) for _field, _localized in Song.ATTRIBUTE_CHOICES])]
+        print local_stats
+        return local_stats
+##        local_stats = [
+##            (_status, [(
+##                _field,
+##                _localized,
+##                getattr(self, _field +  _status),
+##                django_settings.MAX_STATS[_field+ _status],
+##                (getattr(self, _field + status) / (django_settings.MAX_STATS[_field + status] or 1)) * 100,
+##            ) for _field, _localized in Song.ATTRIBUTE_CHOICES
+##            ]) for _status, _localized in self.levels
+##        ]
+##        print local_stats
+##        for a, b in local_stats:
+##            print a
+##            for c, d, e, f, g in b:
+##                print c
+##                print d
+##                print e
+##                print f
+##                print g
+            
 
     limited = models.BooleanField(_('Limited'), default=False)
     promo = models.BooleanField(_('Promo'), default=False)
@@ -602,7 +687,19 @@ class Card(MagiModel):
     cool_max = models.PositiveIntegerField(string_concat(_('Cool'), ' (', _('Maximum'), ')'), null=True)
     cool_max_idol = models.PositiveIntegerField(string_concat(_('Cool'), ' (', _('Idolized'), ', ', _('Maximum'), ')'), null=True)
 
-    hp = models.PositiveIntegerField(string_concat(_('HP'), ' (', _('Unidolized'), ')'), null=True)
+    UNIDOLIZED_FIELDS = (
+        'smile_max',
+        'pure_max',
+        'cool_max',
+    )
+
+    IDOLIZED_FIELDS = (
+        'smile_max_idol',
+        'pure_max_idol',
+        'cool_max_idol',
+    )
+
+    hp = models.PositiveIntegerField(string_concat(_('HP'), ' (', _('Idolized'), ')'), null=True)
 
     in_set = models.ForeignKey(Set, related_name="sets", verbose_name=_('Sets'), null=True)
 
