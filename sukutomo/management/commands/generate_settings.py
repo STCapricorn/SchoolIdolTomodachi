@@ -14,14 +14,8 @@ def generate_settings():
 
     print 'Get max stats'
     stats = {
-        'smile_min': None,
-        'smile_max': None,
         'smile_max_idol': None,
-        'pure_min': None,
-        'pure_max': None,
         'pure_max_idol': None,
-        'cool_min': None,
-        'cool_max': None,
         'cool_max_idol': None,
     }
     try:

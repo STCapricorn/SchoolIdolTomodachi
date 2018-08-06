@@ -1,4 +1,6 @@
 ﻿{% with card=item %}
+<!--images-->
+
 <div class="center-align-div">
   <a href="{{ card.item_url }}" data-ajax-url="{{ card.ajax_item_url }}" data-ajax-title="{{ card }}">
     {% if card.image or card.image_idol %}
@@ -9,42 +11,58 @@
     {% endif %}
   </a>
 </div>
+
+<!--if itemview-->
+
 {% if current == 'card_item' or current == 'card_item_ajax' %}
-{% load l10n %}
+
 <div class="card-statistics">
-  <div class="btn-group center-align" data-toggle="buttons" data-control-tabs="card-{{ card.id }}">
-    {% for level in card.levels %}
-    <label class="btn active" style="width: 33.333333333%" data-open-tab="card-{{ card.id }}">
-      <input type="radio" checked>{{ level }}</input>
+
+<!--contains level buttons-->
+  <div class="btn-group" data-toggle="buttons" data-control-tabs="card-{{ card.id }}">
+
+  {% for suffix, level in card.levels %}
+<!--buttons-->
+
+    <label class="btn{% if suffix == '_min' %} active{% endif %} {{ card.attribute }}" style="width: {% if card.unidolized and card.idolized %}33.333333333{% elif card.unidolized or card.idolized %}50{% else %}100{% endif %}%" data-open-tab="card-{{ card.id }}-{{ suffix }}">
+      <input type="radio"{% if suffix == '_min' %} checked{% endif %}>{{ level }}</input>
     </label>
-     {% endfor %}
+  {% endfor %}
+<!--button generation end-->
   </div>
-</div>
-<div class="tab-content" data-tabs="card-{{ card.id }}">
-{% for status, stats in card.stats %}
-      <div class="tab-pane active" data-tab="card-{{ card.id }}-{{status}}">
-{% for field, localized, value, max, percent in stats %}
-	<div class="row">
-	  <div class="col-xs-4">localized</div>
-	  <div class="col-xs-2 text-right">value</div>
-	  <div class="col-xs-6">
-	    <div class="progress">
-	      <div class="progress-bar progress-bar progress-bar-rarity-{{ card.i_rarity }} progress-bar-striped"
-		   role="progressbar"
-		   style="width: {{percent}}%;">
-	      </div>
+<!--buttons end-->
+<!--contains stats-->
+  <div class="tab-content" data-tabs="card-{{ card.id }}">
+<!--making stats areas-->
+  {% for status, stats in card.stats %}
+<!--{{ status }}-->
+    <div class="tab-pane{% if status == '_min' %} active{% endif %}" data-tab="card-{{ card.id }}-{{status}}">
+<!--each stat-->
+    {% for field, localized, value, max, percent in stats %}
+      <div class="row row-{{ field }}">
+	<div class="col-xs-4">{{ localized }}</div>
+	<div class="col-xs-2 text-right">{{ value }}</div>
+	<div class="col-xs-6">
+	  <div class="progress">
+	    <div class="progress-bar {{ field }} progress-bar-striped" role="progressbar" style="width: {{ percent }}%;">
 	    </div>
 	  </div>
-{% endfor %}
-	</div>
-{% endfor %}
-      <div class="tab-pane active" data-tab="card-{{ card.id }}">
+        </div>
+      </div>
+    {% endfor %}
+    </div>
+  {% endfor %}
+  {% if card.hp %}
+      <div class="tab-pane active" data-tab="card-{{ card.id }}-HP">
 	<div class="row">
-	  <div class="col-xs-4">um</div>
-	  <div class="col-xs-2 text-right">{{ card.hp }}</div>
+        <i class="col-xs-1 flaticon-hp"></i>
+          <div class="col-xs-4 text-left">HP</div>
+	  <div class="col-xs-1 text-right">{{ card.hp }}</div>
 	  </div>
 	  </div>
+{% endif %}
 	</div>
       </div>
+</div>
 {% endif %}
 {% endwith %}

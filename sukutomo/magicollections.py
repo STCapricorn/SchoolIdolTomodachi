@@ -630,6 +630,7 @@ class CardCollection(MagiCollection):
 
     class ItemView(MagiCollection.ItemView):
         top_illustration = 'items/cardItem'
+        ajax_callback = 'loadCard'
         
         def to_fields(self, item, order=None, extra_fields=None, exclude_fields=None, *args, **kwargs):
             if extra_fields is None: extra_fields = []

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import division
 import datetime, time
 from collections import OrderedDict
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -517,37 +518,16 @@ class Card(MagiModel):
     @property
     def stats(self):
         local_stats = ['a', 'b']
-        for _status, _localized in self.levels:
-            local_stats = [
-                (_status, [(
-                    _field,
-                    _localized,
-                    getattr(self, _field + _status),
-                    django_settings.MAX_STATS[_field + _status],
-                    (getattr(self, _field + _status) / (django_settings.MAX_STATS[_field + _status] or 1)) * 100,
-                ) for _field, _localized in Song.ATTRIBUTE_CHOICES])]
+        local_stats = [
+            (_status, [(
+                _field,
+                _localized,
+                getattr(self, _field + _status),
+                django_settings.MAX_STATS[_field + '_max_idol'],
+                (getattr(self, _field + _status) / (django_settings.MAX_STATS[_field +'_max_idol'])) * 100,
+            ) for _field, _localized in Song.ATTRIBUTE_CHOICES]) for _status, _localized in self.levels]
         print local_stats
-        return local_stats
-##        local_stats = [
-##            (_status, [(
-##                _field,
-##                _localized,
-##                getattr(self, _field +  _status),
-##                django_settings.MAX_STATS[_field+ _status],
-##                (getattr(self, _field + status) / (django_settings.MAX_STATS[_field + status] or 1)) * 100,
-##            ) for _field, _localized in Song.ATTRIBUTE_CHOICES
-##            ]) for _status, _localized in self.levels
-##        ]
-##        print local_stats
-##        for a, b in local_stats:
-##            print a
-##            for c, d, e, f, g in b:
-##                print c
-##                print d
-##                print e
-##                print f
-##                print g
-            
+        return local_stats       
 
     limited = models.BooleanField(_('Limited'), default=False)
     promo = models.BooleanField(_('Promo'), default=False)
