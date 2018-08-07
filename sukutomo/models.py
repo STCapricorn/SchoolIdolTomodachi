@@ -522,12 +522,19 @@ class Card(MagiModel):
             (_status, [(
                 _field,
                 _localized,
+                _image,
                 getattr(self, _field + _status),
                 django_settings.MAX_STATS[_field + '_max_idol'],
                 (getattr(self, _field + _status) / (django_settings.MAX_STATS[_field +'_max_idol'])) * 100,
-            ) for _field, _localized in Song.ATTRIBUTE_CHOICES]) for _status, _localized in self.levels]
+            ) for _field, _localized, _image in self.STAT_ATTRIBUTES]) for _status, _localized in self.levels]
         print local_stats
-        return local_stats       
+        return local_stats
+
+    STAT_ATTRIBUTES = (
+        ('smile', _('Smile'), '0'),
+        ('pure', _('Pure'), '1'),
+        ('cool', _('Cool'), '2'),
+    )
 
     limited = models.BooleanField(_('Limited'), default=False)
     promo = models.BooleanField(_('Promo'), default=False)
@@ -679,7 +686,13 @@ class Card(MagiModel):
         'cool_max_idol',
     )
 
-    hp = models.PositiveIntegerField(string_concat(_('HP'), ' (', _('Idolized'), ')'), null=True)
+    hp = models.PositiveIntegerField(string_concat(_('HP'), ' (', _('Idolized'), ')'), help_text=_('If card is not idolizable, just put HP + 1'), null=True)
+
+    @property
+    def hp_unidol(self):
+        if self.hp:
+            return self.hp - 1
+        return '???'
 
     in_set = models.ForeignKey(Set, related_name="sets", verbose_name=_('Sets'), null=True)
 

@@ -1,47 +1,38 @@
 ﻿{% with card=item %}
-<!--images-->
 
 <div class="center-align-div">
+{% if current == 'card_list' %}
   <a href="{{ card.item_url }}" data-ajax-url="{{ card.ajax_item_url }}" data-ajax-title="{{ card }}">
+{% endif %}
     {% if card.image or card.image_idol %}
-      {% if card.image %}<img class="card-list img-responsive" src="{{ card.image_url }}" alt="{{ card }}" />{% endif %}{% if card.image_idol %}<img class="card-list img-responsive" src="{{ card.image_idol_url }}" alt="{{ card }}" />
+      {% if card.image %}
+        <img class="card-list img-responsive" src="{{ card.image_url }}" alt="{{ card }}" />{% endif %}{% if card.image_idol %}<img class="card-list img-responsive" src="{{ card.image_idol_url }}" alt="{{ card }}" />
+      {% endif %}
+      {% else %}
+        <img class="card-list img-responsive" src="/static/img/empty_card.png" alt="{{ card }}" />
     {% endif %}
-    {% else %}
-      <img class="card-list img-responsive" src="/static/img/empty_card.png" alt="{{ card }}" />
-    {% endif %}
+{% if current == 'card_list' %}
   </a>
+{% endif %}
 </div>
 
-<!--if itemview-->
-
 {% if current == 'card_item' or current == 'card_item_ajax' %}
-
 <div class="card-statistics">
-
-<!--contains level buttons-->
   <div class="btn-group" data-toggle="buttons" data-control-tabs="card-{{ card.id }}">
-
   {% for suffix, level in card.levels %}
-<!--buttons-->
-
     <label class="btn{% if suffix == '_min' %} active{% endif %} {{ card.attribute }}" style="width: {% if card.unidolized and card.idolized %}33.333333333{% elif card.unidolized or card.idolized %}50{% else %}100{% endif %}%" data-open-tab="card-{{ card.id }}-{{ suffix }}">
       <input type="radio"{% if suffix == '_min' %} checked{% endif %}>{{ level }}</input>
     </label>
   {% endfor %}
-<!--button generation end-->
   </div>
-<!--buttons end-->
-<!--contains stats-->
   <div class="tab-content" data-tabs="card-{{ card.id }}">
-<!--making stats areas-->
   {% for status, stats in card.stats %}
-<!--{{ status }}-->
     <div class="tab-pane{% if status == '_min' %} active{% endif %}" data-tab="card-{{ card.id }}-{{status}}">
-<!--each stat-->
-    {% for field, localized, value, max, percent in stats %}
+    {% for field, localized, image, value, max, percent in stats %}
       <div class="row row-{{ field }}">
-	<div class="col-xs-4">{{ localized }}</div>
-	<div class="col-xs-2 text-right">{{ value }}</div>
+        <img class="img-responsive col-xs-1" src="/static/img/i_attribute/{{ image }}.png" />
+	<div class="col-xs-4 text-left">{{ localized }}</div>
+	<div class="col-xs-1 text-right">{{ value }}</div>
 	<div class="col-xs-6">
 	  <div class="progress">
 	    <div class="progress-bar {{ field }} progress-bar-striped" role="progressbar" style="width: {{ percent }}%;">
@@ -49,20 +40,18 @@
 	  </div>
         </div>
       </div>
-    {% endfor %}
-    </div>
-  {% endfor %}
-  {% if card.hp %}
-      <div class="tab-pane active" data-tab="card-{{ card.id }}-HP">
-	<div class="row">
+      {% endfor %}
+      {% if card.hp %}
+	<div class="row row-HP-{{ status }}">
         <i class="col-xs-1 flaticon-hp"></i>
           <div class="col-xs-4 text-left">HP</div>
-	  <div class="col-xs-1 text-right">{{ card.hp }}</div>
-	  </div>
-	  </div>
-{% endif %}
+	  <div class="col-xs-1 text-right">{% if card.unidolized and status != '_max_idol' %}{{ card.hp_unidol }}{% else %}{{ card.hp }}{% endif %}</div>
 	</div>
+      {% endif %}
       </div>
+    {% endfor %}
+    </div>
+  </div>
 </div>
 {% endif %}
 {% endwith %}

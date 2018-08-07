@@ -760,19 +760,19 @@ class CardCollection(MagiCollection):
             exclude_fields.append('i_center')
             exclude_fields.append('i_group')
             exclude_fields.append('boost_percent')
-##            exclude_fields.append('smile_min')
-##            exclude_fields.append('smile_max')
-##            exclude_fields.append('smile_max_idol')
-##            exclude_fields.append('pure_min')
-##            exclude_fields.append('pure_max')
-##            exclude_fields.append('pure_max_idol')
-##            exclude_fields.append('cool_min')
-##            exclude_fields.append('cool_max')
-##            exclude_fields.append('cool_max_idol')
-##            exclude_fields.append('hp')
+            exclude_fields.append('smile_min')
+            exclude_fields.append('smile_max')
+            exclude_fields.append('smile_max_idol')
+            exclude_fields.append('pure_min')
+            exclude_fields.append('pure_max')
+            exclude_fields.append('pure_max_idol')
+            exclude_fields.append('cool_min')
+            exclude_fields.append('cool_max')
+            exclude_fields.append('cool_max_idol')
+            exclude_fields.append('hp')
 
             order = ['card_id', 'name', 'idol_details', 'i_rarity', 'i_attribute', 'c_versions', 'release', 'set', 'main_skill',
-                     'leader_skill', 'icons', 'arts', 'transparents', 'details'] + order
+                     'leader_skill', 'icons', 'images', 'arts', 'transparents', 'details'] + order
             
             fields = super(CardCollection.ItemView, self).to_fields(
                 item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)
