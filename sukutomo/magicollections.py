@@ -821,6 +821,10 @@ class SkillCollection(MagiCollection):
     navbar_link = False
     permissions_required = ['manage_main_items']
 
+    class ListView(MagiCollection.ListView):
+        #filter_form = forms.SkillFilterForm
+        per_line = 6
+
     class AddView(MagiCollection.AddView):
         staff_required = True
         permissions_required = ['manage_main_items']
