@@ -481,67 +481,13 @@ class Card(MagiModel):
     RARITY_CHOICES = [(_name) for _name, _info in RARITY.items()]
     RARITY_LEVELS = [(_name, _info) for _name, _info in RARITY.items()]
     i_rarity =  models.PositiveIntegerField(_('Rarity'), choices=i_choices(RARITY_CHOICES), null=True)
-
-    @property
-    def unidolized(self):
-        for unidol_field in self.UNIDOLIZED_FIELDS:
-            if getattr(self, unidol_field):
-                return True
-        return False
-
-    @property
-    def idolized(self):
-        for idol_field in self.IDOLIZED_FIELDS:
-            if getattr(self, idol_field):
-                return True
-        return False
-
-    @property
-    def levels(self):
-        level_return = []
-        for _rarity, _info in self.RARITY_LEVELS:
-            if self.rarity is _rarity:
-                if self.unidolized:
-                    level_return += [
-                        ('_max', _('Level {}').format(_info['max'])),
-                    ]
-                    
-                if self.idolized:
-                    level_return += [
-                        ('_max_idol', _('Level {}').format(_info['max_idol'])),
-                    ]
-        level_return = [
-            ('_min', _('Level {}').format(1)),
-        ] + level_return
-        return level_return
-
-    @property
-    def stats(self):
-        local_stats = ['a', 'b']
-        local_stats = [
-            (_status, [(
-                _field,
-                _localized,
-                _image,
-                getattr(self, _field + _status),
-                django_settings.MAX_STATS[_field + '_max_idol'],
-                (getattr(self, _field + _status) / (django_settings.MAX_STATS[_field +'_max_idol'])) * 100,
-            ) for _field, _localized, _image in self.STAT_ATTRIBUTES]) for _status, _localized in self.levels]
-        print local_stats
-        return local_stats
-
-    STAT_ATTRIBUTES = (
-        ('smile', _('Smile'), '0'),
-        ('pure', _('Pure'), '1'),
-        ('cool', _('Cool'), '2'),
-    )
+    
+    ATTRIBUTE_CHOICES = Idol.ATTRIBUTE_CHOICES
+    i_attribute = models.PositiveIntegerField(_('Attribute'), choices=i_choices(ATTRIBUTE_CHOICES), null=True)
 
     limited = models.BooleanField(_('Limited'), default=False)
     promo = models.BooleanField(_('Promo'), default=False)
     support = models.BooleanField(_('Support'), default=False)
-    
-    ATTRIBUTE_CHOICES = Idol.ATTRIBUTE_CHOICES
-    i_attribute = models.PositiveIntegerField(_('Attribute'), choices=i_choices(ATTRIBUTE_CHOICES), null=True)
 
     VERSIONS_CHOICES = Account.VERSION_CHOICES
     c_versions = models.TextField(_('Server availability'), blank=True, null=True, default='"JP"')
@@ -574,6 +520,7 @@ class Card(MagiModel):
         'chance',
         'number',
         'length',
+        'attribute',
     )
 
     IDOL_REPLACE = (
@@ -657,10 +604,10 @@ class Card(MagiModel):
     transparent_idol = models.ImageField(string_concat(_('Transparent'), ' (', _('Idolized'), ')'), upload_to=uploadItem('c'), null=True)
 
     art = models.ImageField(_('Art'), upload_to=uploadItem('c'), null=True)
-    art_idol = models.ImageField(string_concat(_('Art'), ' (', _('Idolized'), ')'), upload_to=uploadItem('ic'), null=True)
+    art_idol = models.ImageField(string_concat(_('Art'), ' (', _('Idolized'), ')'), upload_to=uploadItem('c'), null=True)
 
     old_art = models.ImageField(string_concat(_('Art'), ' (', _('Old'), ')'), upload_to=uploadItem('c'), null=True)
-    old_art_idol = models.ImageField(string_concat(_('Art'), ' (', _('Old'), ', ', _('Idolized'), ')'), upload_to=uploadItem('ic'), null=True)
+    old_art_idol = models.ImageField(string_concat(_('Art'), ' (', _('Old'), ', ', _('Idolized'), ')'), upload_to=uploadItem('c'), null=True)
 
     smile_min = models.PositiveIntegerField(string_concat(_('Smile'), ' (', _('Minimum'), ')'), null=True)
     smile_max = models.PositiveIntegerField(string_concat(_('Smile'), ' (', _('Maximum'), ')'), null=True)
@@ -694,6 +641,60 @@ class Card(MagiModel):
             return self.hp - 1
         return '???'
 
+    @property
+    def unidolized(self):
+        for unidol_field in self.UNIDOLIZED_FIELDS:
+            if getattr(self, unidol_field):
+                return True
+        return False
+
+    @property
+    def idolized(self):
+        for idol_field in self.IDOLIZED_FIELDS:
+            if getattr(self, idol_field):
+                return True
+        return False
+
+    @property
+    def levels(self):
+        level_return = []
+        for _rarity, _info in self.RARITY_LEVELS:
+            if self.rarity is _rarity:
+                if self.unidolized:
+                    level_return += [
+                        ('_max', _('Level {}').format(_info['max'])),
+                    ]
+                    
+                if self.idolized:
+                    level_return += [
+                        ('_max_idol', _('Level {}').format(_info['max_idol'])),
+                    ]
+        level_return = [
+            ('_min', _('Level {}').format(1)),
+        ] + level_return
+        return level_return
+
+    @property
+    def stats(self):
+        local_stats = ['a', 'b']
+        local_stats = [
+            (_status, [(
+                _field,
+                _localized,
+                _image,
+                getattr(self, _field + _status),
+                django_settings.MAX_STATS[_field + '_max_idol'],
+                (getattr(self, _field + _status) / (django_settings.MAX_STATS[_field +'_max_idol'])) * 100,
+            ) for _field, _localized, _image in self.STAT_ATTRIBUTES]) for _status, _localized in self.levels]
+        print local_stats
+        return local_stats
+
+    STAT_ATTRIBUTES = (
+        ('smile', _('Smile'), '0'),
+        ('pure', _('Pure'), '1'),
+        ('cool', _('Cool'), '2'),
+    )
+
     in_set = models.ForeignKey(Set, related_name="sets", verbose_name=_('Sets'), null=True)
 
     details = models.TextField(_('Details'), null=True)
@@ -714,7 +715,7 @@ class Event(MagiModel):
     def __unicode__(self):
         return u'{}'.format(self.t_title)
 
-    banner = models.ImageField(_('Banner'), upload_to=uploadItem('e'), null=True)
+    image = models.ImageField(_('Banner'), upload_to=uploadItem('e'), null=True)
 
     TYPE_CHOICES = (
         ('token', _('Token')),

@@ -636,34 +636,38 @@ class CardCollection(MagiCollection):
             if extra_fields is None: extra_fields = []
             if exclude_fields is None: exclude_fields = []
             if order is None: order = []
-            
-            ## idol
+
             if item.idol:
                 extra_fields.append(('idol_details', {
                     'verbose_name': _('Idol'),
                     'type': 'html',
                     'value': string_concat('<a href="', item.idol.item_url, '"data-ajax-url="', item.idol.ajax_item_url,
-                        '"data-ajax-title="', item.idol, '">', item.idol.t_name, '<img class="idol-small-image" src="', item.idol.image_url,'"></img></a>'),
+                        '"data-ajax-title="', item.idol, '">', item.idol.t_name, '<img class="idol-small-image" src="',
+                            item.idol.image_url,'"></img></a>'),
                     'icon': 'idol',
                 }))
                 
-            ## skill
                 if item.skill:
                     skill_details = getattr(item, 'skill_details')
                     for variable in models.Card.SKILL_REPLACE:
-                        og = skill_details
-                        var = getattr(item, variable)
-                        var_re = '{' + variable + '}'
-                        skill_details = og.replace(var_re, str(var))
-
-                    for ivariable in models.Card.IDOL_REPLACE:
-                        if ivariable is not 'unit':
+                        if variable is not 'attribute':
                             og = skill_details
-                            var = getattr(item.idol, 't_' + ivariable)
-                            var_re = '{' + ivariable + '}'
+                            var = getattr(item, variable)
+                            var_re = '{' + variable + '}'
                             skill_details = og.replace(var_re, str(var))
-                        elif item.idol.unit:
-                            skill_details = skill_details.replace('{unit}', item.idol.unit)
+                        elif item.dependency:
+                            skill_details = skill_details.replace('{dependency}', str(getattr(item, 't_dependency')))
+                        elif item.attribute:
+                            skill_details = skill_details.replace('{attribute}', str(getattr(item, 't_attribute')))
+                    if item.idol: 
+                        for ivariable in models.Card.IDOL_REPLACE:
+                            if ivariable is not 'unit':
+                                og = skill_details
+                                var = getattr(item.idol, 't_' + ivariable)
+                                var_re = '{' + ivariable + '}'
+                                skill_details = og.replace(var_re, str(var))
+                            elif item.idol.unit:
+                                skill_details = skill_details.replace('{unit}', item.idol.unit)
                     
                     skill_sentence=_('{} (Level 1)').format(skill_details)  
                     extra_fields.append(('main_skill', {
@@ -672,12 +676,10 @@ class CardCollection(MagiCollection):
                         'value': skill_sentence,
                         'icon': 'sparkle',
                         }))
-                    
-            ## leader skill
+
             if item.center:
                 leader_skill = getattr(item, 'center_details')
-                leader_skill = leader_skill.format(getattr(item, 't_attribute'))
-                    
+                leader_skill = leader_skill.format(getattr(item, 't_attribute'))  
                 if item.rarity in ['UR', 'SSR']:
                     leader_second = _('plus {group} members\' {} pts. up by {}%')
                     if item.group is not 0 and item.boost_percent is not None:
@@ -698,17 +700,16 @@ class CardCollection(MagiCollection):
                     'icon': 'center',
                 }))
 
-                if item.in_set:
-                    extra_fields.append(('set', {
-                        'verbose_name': _('Set'),
-                        'type': 'link',
-                        'ajax_link': item.in_set.ajax_cards_url,
-                        'link': item.in_set.cards_url,
-                        'link_text': unicode(item.in_set),
-                        'icon': 'scout-box',
-                    }))
+            if item.in_set:
+                extra_fields.append(('set', {
+                    'verbose_name': _('Set'),
+                    'type': 'link',
+                    'ajax_link': item.in_set.ajax_cards_url,
+                    'link': item.in_set.cards_url,
+                    'link_text': unicode(item.in_set),
+                    'icon': 'scout-box',
+                }))
 
-            ## images
             for image, verbose_name in CARD_IMAGES:
                 if getattr(item, image) and image is not 'transparent':
                     extra_fields.append((u'{}s'.format(image), {
@@ -778,11 +779,12 @@ class CardCollection(MagiCollection):
                 item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)
 
             if item.idol and item.skill:
-                setSubField(fields, 'main_skill', key='value', value=string_concat(item.skill.card_html(), '<br />', skill_sentence))
+                setSubField(fields, 'main_skill', key='value', value=string_concat(
+                    item.skill.card_html(), '<br />', skill_sentence))
+
             if item.center:
                 setSubField(fields, 'leader_skill', key='type', value='title_text')
                 setSubField(fields, 'leader_skill', key='title', value=string_concat(item.t_attribute, ' ', item.t_center))
-
                 if item.group is not 0 and item.boost_percent is not None:
                     setSubField(fields, 'leader_skill', key='value', value=string_concat(leader_skill, ', ', leader_second))
 
@@ -792,7 +794,7 @@ class CardCollection(MagiCollection):
         filter_form = forms.CardFilterForm
         item_template = custom_item_template
         per_line = 3
-        default_ordering = '-release'
+        default_ordering = '-release,-card_id'
 
     class AddView(MagiCollection.AddView):
         staff_required = True
