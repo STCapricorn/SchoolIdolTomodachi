@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.utils.translation import ugettext_lazy as _, get_language
-from django.utils.formats import dateformat
+from django.utils.formats import date_format
 from django.utils.safestring import mark_safe
 from django.utils.translation import string_concat
 from magi.item_model import getInfoFromChoices
@@ -46,22 +46,17 @@ class AccountCollection(_AccountCollection):
 # Idols Collection
 
 IDOLS_ICONS = {
-    'name': 'id',
-    'japanese_name': 'id',
-    'school': 'school',
-    'year': 'education',
-    'age': 'scoreup',
-    'birthday': 'birthday',
-    'height': 'measurements',
-    'blood': 'hp',
-    'bust': 'measurements',
-    'waist': 'measurements',
-    'hips': 'measurements',
-    'hobbies': 'hobbies',
-    'favorite_food': 'food-like',
-    'least_favorite_food' : 'food-dislike',
-    'description': 'author',
+    'name': 'id', 'japanese_name': 'id', 'school': 'school', 'year': 'education', 'age': 'scoreup',
+    'birthday': 'birthday', 'height': 'measurements', 'blood': 'hp', 'bust': 'measurements',
+    'waist': 'measurements', 'hips': 'measurements', 'color': 'palette', 'hobbies': 'hobbies',
+    'favorite_food': 'food-like', 'least_favorite_food' : 'food-dislike', 'description': 'author',
 }
+
+IDOL_ORDER = [
+    'image', 'name', 'japanese_name', 'attribute', 'unit', 'subunit', 'school',
+    'year', 'astrological_sign', 'birthday', 'age', 'blood', 'measurements', 'color',
+    'hobbies', 'favorite_food', 'least_favorite_food', 'description',
+]
 
 IDOLS_CUTEFORM = {
     'i_unit': {
@@ -107,11 +102,11 @@ class IdolCollection(MagiCollection):
                 'astrological_sign': staticImageURL(item.i_astrological_sign, folder='i_astrological_sign', extension='png'),
         }, **kwargs)
 
-        if item.japanese_name is not None and get_language() == 'ja':
+        if item.japanese_name and get_language() == 'ja':
             setSubField(fields, 'name', key='value', value=item.japanese_name)
 
         setSubField(fields, 'birthday', key='type', value='text')
-        setSubField(fields, 'birthday', key='value', value=lambda f: dateformat.format(item.birthday, "F d"))
+        setSubField(fields, 'birthday', key='value', value=lambda f: date_format(item.birthday, format='MONTH_DAY_FORMAT', use_l10n=True))
 
         return fields
 
@@ -142,39 +137,31 @@ class IdolCollection(MagiCollection):
             if item.birthday is not None:
                 exclude_fields += ['age', 'i_astrological_sign']
             exclude_fields.append('japanese_name')
-
-            order = ['image', 'name', 'japanese_name', 'attribute', 'unit', 'subunit', 'school', 'year',
-                     'astrological_sign', 'birthday', 'age', 'blood', 'measurements', 'hobbies', 'favorite_food',
-                     'least_favorite_food', 'description'] + order
+            order = IDOL_ORDER + order
 
             fields = super(IdolCollection.ItemView, self).to_fields(item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)
 
-            if item.birthday is not None:
+            if item.birthday:
                 if item.astrological_sign is not None:
                     setSubField(fields, 'birthday', key='icon', value=None)
                     setSubField(fields, 'birthday', key='image', value=staticImageURL(item.i_astrological_sign, folder='i_astrological_sign', extension='png'))
-                if item.age is not None:
-                    setSubField(fields, 'birthday', key='type', value='title_text')
-                    setSubField(fields, 'birthday', key='title', value=lambda f: dateformat.format(item.birthday, "F d"))
-                    setSubField(fields, 'birthday', key='value', value=_('{age} years old').format(age=item.age))
-                else:
-                    setSubField(fields, 'birthday', key='type', value='text')
-                    setSubField(fields, 'birthday', key='value', value=lambda f: dateformat.format(item.birthday, "F d"))
+                if item.age:
+                    setSubField(fields, 'birthday', key='type', value='text_annotation')
+                    setSubField(fields, 'birthday', key='annotation', value=_('{age} years old').format(age=item.age))
 
-            if item.school is not None and item.i_year is not None:
+            if item.school and item.year:
                     setSubField(fields, 'school', key='type', value='title_text')
                     setSubField(fields, 'school', key='title', value=item.t_school)
                     setSubField(fields, 'school', key='value', value='{}'.format(unicode(item.t_year)))
 
             setSubField(fields, 'description', key='type', value='long_text')
 
-            if item.japanese_name is not None:
+            if item.japanese_name:
                 if get_language() == 'ja':
                     setSubField(fields, 'name', key='value', value=item.japanese_name)
                 else:
-                    setSubField(fields, 'name', key='type', value='title_text')
-                    setSubField(fields, 'name', key='title', value=item.name)
-                    setSubField(fields, 'name', key='value', value=item.japanese_name)
+                    setSubField(fields, 'name', key='type', value='text_annotation')
+                    setSubField(fields, 'name', key='annotation', value=item.japanese_name)
 
             return fields
 
@@ -562,24 +549,11 @@ class SongCollection(MagiCollection):
 ############################################################
 # Card Collection
 
-CARDS_ICONS = {
-    'name': 'id', 'card_id': 'id', 'versions': 'world', 'release': 'date',
-    'images': 'pictures', 'icons': 'pictures', 'transparents': 'pictures',
-    'art': 'pictures', 'hp': 'hp', 'details': 'author',
-}
-
-CARD_IMAGES = {
-    ('image', _('Images')),
-    ('icon', _('Icons')),
-    ('transparent', _('Transparents')),
-    ('art', _('Art')),
-}
-
-CARD_ORDER = [
-    'card_id', 'name', 'idol_details', 'i_rarity', 'i_attribute',
-    'c_versions', 'release', 'set', 'main_skill', 'leader_skill',
-    'icons', 'images', 'arts', 'transparents', 'details'
-]
+CARD_AUTO_EXCLUDE = [
+    'limited', 'promo', 'support', 'rate', 'i_dependency', 'chance',
+    'number', 'length', 'i_center', 'i_group', 'boost_percent',
+    'smile_min', 'pure_min', 'cool_min', 'hp',
+] + models.Card.IDOLIZED_FIELDS + models.Card.UNIDOLIZED_FIELDS
 
 CARDS_CUTEFORM = {
     'i_unit': {
@@ -602,6 +576,25 @@ CARDS_CUTEFORM = {
         'title': _('Rarity'),
     },
 }
+
+CARDS_ICONS = {
+    'name': 'id', 'card_id': 'id', 'versions': 'world', 'release': 'date',
+    'images': 'pictures', 'icons': 'pictures', 'transparents': 'pictures',
+    'art': 'pictures', 'hp': 'hp', 'details': 'author',
+}
+
+CARD_IMAGES = {
+    ('image', _('Images')),
+    ('icon', _('Icons')),
+    ('transparent', _('Transparents')),
+    ('art', _('Art')),
+}
+
+CARD_ORDER = [
+    'card_id', 'name', 'idol_details', 'i_rarity', 'i_attribute',
+    'c_versions', 'release', 'set', 'main_skill', 'leader_skill',
+    'icons', 'images', 'arts', 'transparents', 'details'
+]
 
 class CardCollection(MagiCollection):
     queryset = models.Card.objects.all()
@@ -759,11 +752,6 @@ class CardCollection(MagiCollection):
                     }))
 
             # Exclude certain fields by default
-            CARD_AUTO_EXCLUDE = [
-                'limited', 'promo', 'support', 'rate', 'i_dependency', 'chance', 'number', 'length',
-                'i_center', 'i_group', 'boost_percent', 'smile_min', 'smile_max', 'smile_max_idol',
-                'pure_min', 'pure_max', 'pure_max_idol', 'cool_min', 'cool_max', 'cool_max_idol', 'hp',
-            ]
             for field in CARD_AUTO_EXCLUDE:
                 exclude_fields.append(field)
 

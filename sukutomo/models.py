@@ -8,7 +8,7 @@ from django.utils.translation import ugettext_lazy as _, string_concat, get_lang
 from django.db import models
 from django.utils import timezone
 from django.conf import settings as django_settings
-from magi.utils import PastOnlyValidator, staticImageURL, ordinalNumber
+from magi.utils import PastOnlyValidator, staticImageURL, ordinalNumber, ColorField
 from magi.abstract_models import BaseAccount
 from magi.item_model import MagiModel, i_choices, getInfoFromChoices
 from magi.models import uploadItem
@@ -241,6 +241,8 @@ class Idol(MagiModel):
     bust = models.PositiveIntegerField(_('Bust'), null=True)
     waist = models.PositiveIntegerField(_('Waist'), null=True)
     hips = models.PositiveIntegerField(_('Hips'), null=True)
+
+    color = ColorField(_('Color'), null=True, blank=True)
 
     hobbies = models.CharField(_('Hobbies'), max_length=100, null=True)
 
@@ -636,17 +638,17 @@ class Card(MagiModel):
     cool_max = models.PositiveIntegerField(string_concat(_('Cool'), ' (', _('Maximum'), ')'), null=True)
     cool_max_idol = models.PositiveIntegerField(string_concat(_('Cool'), ' (', _('Idolized'), ', ', _('Maximum'), ')'), null=True)
 
-    UNIDOLIZED_FIELDS = (
+    UNIDOLIZED_FIELDS = [
         'smile_max',
         'pure_max',
         'cool_max',
-    )
+    ]
 
-    IDOLIZED_FIELDS = (
+    IDOLIZED_FIELDS = [
         'smile_max_idol',
         'pure_max_idol',
         'cool_max_idol',
-    )
+    ]
 
     hp = models.PositiveIntegerField(string_concat(_('HP'), ' (', _('Idolized'), ')'), help_text=_('If card is not idolizable, just put HP + 1'), null=True)
 

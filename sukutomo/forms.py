@@ -32,7 +32,7 @@ class IdolForm(AutoForm):
         fields = '__all__'
 
 class IdolFilterForm(MagiFiltersForm):
-    search_fields = ['name', 'japanese_name', 'hobbies', 'favorite_food', 'least_favorite_food', 'description']
+    search_fields = ['name', 'japanese_name', 'color', 'hobbies', 'favorite_food', 'least_favorite_food', 'description']
 
     ordering_fields = [
         ('name', _('Name')),
