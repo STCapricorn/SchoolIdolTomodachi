@@ -14,6 +14,23 @@ from magi.item_model import MagiModel, i_choices, getInfoFromChoices
 from magi.models import uploadItem
 from sukutomo.django_translated import t
 
+LANGUAGES_TO_VERSIONS = {
+    'en': 'EN',
+    'es': 'EN',
+    'zh-hans': 'TW',
+    'ru': 'EN',
+    'it': 'EN',
+    'fr': 'EN',
+    'de': 'EN',
+    'pl': 'EN',
+    'ja': 'JP',
+    'kr': 'KR',
+    'id': 'EN',
+    'zh-hant': 'TW',
+    'pt-br': 'EN',
+    'tr': 'EN',
+}
+
 class Account(BaseAccount):
     collection_name = 'account'
 
@@ -392,7 +409,7 @@ class Skill(MagiModel):
     i_skill_type =  models.PositiveIntegerField(_('Skill Type'), choices=i_choices(SKILL_TYPE), null=True)
 
     details = models.TextField(_('Details'), help_text=_('Optional variables: {rate}, {dependency}, {chance}, {unit}, {subunit}, {year}, {number}, {length}'), null=True)
-    DETAILS_CHOICES = ALL_ALT_LANGUAGES
+    DETAILSS_CHOICES = ALL_ALT_LANGUAGES
     d_detailss = models.TextField(null=True)
 
 ############################################################
@@ -499,7 +516,7 @@ class Card(MagiModel):
     d_names = models.TextField(null=True)
     
     skill = models.ForeignKey(Skill, related_name="added_skills", verbose_name=_('Skill'), null=True)
-    skill_details = property(lambda _s: _s.skill.details)
+    skill_details = property(lambda _s: _s.skill.t_details)
     rate = models.PositiveIntegerField(_('Rate of Activation'), null=True)
 
     DEPENDENCY_CHOICES = (
@@ -515,18 +532,16 @@ class Card(MagiModel):
     length = models.PositiveIntegerField('{length}', null=True)
 
     SKILL_REPLACE = (
-        'rate',
-        'dependency',
-        'chance',
-        'number',
-        'length',
-        'attribute',
+        'rate', 'dependency', 'chance',
+        'number', 'length', 'attribute',
     )
 
     IDOL_REPLACE = (
-        'unit',
-        'subunit',
-        'year',
+        'unit', 'subunit', 'year',
+    )
+
+    SKILL_REPLACE_TRANSLATE = (
+        'attribute', 'dependency', 'year'
     )
 
     CENTERS = OrderedDict([
@@ -686,7 +701,6 @@ class Card(MagiModel):
                 django_settings.MAX_STATS[_field + '_max_idol'],
                 (getattr(self, _field + _status) / (django_settings.MAX_STATS[_field +'_max_idol'])) * 100,
             ) for _field, _localized, _image in self.STAT_ATTRIBUTES]) for _status, _localized in self.levels]
-        print local_stats
         return local_stats
 
     STAT_ATTRIBUTES = (
@@ -725,7 +739,6 @@ class Event(MagiModel):
         ('as', _('Adventure Stroll')),
         ('fm', _('Friendly Match')),
     )
-
     i_type = models.PositiveIntegerField(_('Event type'), choices=i_choices(TYPE_CHOICES), null=True)
 
     UNIT_CHOICES = (

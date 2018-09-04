@@ -72,6 +72,7 @@ ENABLED_PAGES['twitter'] = {
     'navbar_link_list': 'community',
     'redirect': 'https://twitter.com/schoolidolu',
     'new_tab': True,
+    'divider_before': True,
 }
 
 ENABLED_PAGES['skills'] = {
