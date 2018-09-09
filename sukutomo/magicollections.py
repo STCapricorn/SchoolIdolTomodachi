@@ -62,8 +62,13 @@ IDOLS_CUTEFORM = {
     'i_unit': {
     },
     'i_subunit': {
-        'image_folder': 'i_subunit',
-        'title': _('Subunit'),
+    },
+    'sub_unit': {
+        'to_cuteform': lambda k, v: (
+            staticImageURL(k, folder='i_unit', extension='png') if float(k) - 2 < 0 else
+            staticImageURL(int(k) - 2, folder='i_subunit', extension='png')
+            ),
+        'title': _('Unit'),
         'extra_settings': {
             'modal': 'true',
             'modal-text': 'true',
@@ -352,12 +357,6 @@ class SongCollection(MagiCollection):
         'i_unit': {
         },
         'i_subunit': {
-            'image_folder': 'i_subunit',
-            'title': _('Subunit'),
-            'extra_settings': {
-                'modal': 'true',
-                'modal-text': 'true',
-            },
         },
         'version': {
             'to_cuteform': lambda k, v: SongCollection._version_images[k],
@@ -371,6 +370,17 @@ class SongCollection(MagiCollection):
             'transform': CuteFormTransform.Flaticon,
             'to_cuteform': lambda k, v: SongCollection._location_to_cuteform[k],
         },
+        'sub_unit': {
+            'to_cuteform': lambda k, v: (
+                staticImageURL(k, folder='i_unit', extension='png') if float(k) - 2 < 0 else
+                staticImageURL(int(k) - 2, folder='i_subunit', extension='png')
+                ),
+            'title': _('Unit'),
+            'extra_settings': {
+                'modal': 'true',
+                'modal-text': 'true',
+            },
+        }, 
     }
 
     def to_fields(self, view, item, *args, **kwargs):
@@ -559,22 +569,32 @@ CARDS_CUTEFORM = {
     'i_unit': {
     },
     'i_subunit': {
-        'image_folder': 'i_subunit',
-        'title': _('Subunit'),
-        'extra_settings': {
-            'modal': 'true',
-            'modal-text': 'true',
-        },
     },
     'i_attribute': {
-    },
-    'i_year': {
-        'type': CuteFormType.HTML,
     },
     'i_rarity': {
         'image_folder': 'rarity_3',
         'title': _('Rarity'),
     },
+    'version': {
+        'to_cuteform': lambda k, v: EventCollection._version_images[k],
+        'image_folder': 'language',
+        'transform': CuteFormTransform.ImagePath,
+    },
+    'idol': {
+        'extra_settings': {
+                'modal': 'true',
+                'modal-text': 'true',
+            },
+    },
+    'i_group': {
+        'transform': CuteFormTransform.Flaticon,
+##        'to_cuteform': lambda k, v: CardCollection._center_boost_to_cuteform[models.Card.get_reverse_i('group', k)]
+    },
+    'card_type': {
+        'to_cuteform': lambda k, v: CardCollection._card_type_to_cuteform[k],
+        'transform': CuteFormTransform.Flaticon,
+    }
 }
 
 CARDS_ICONS = {
@@ -607,6 +627,18 @@ class CardCollection(MagiCollection):
     translated_fields = ('name', 'details')
     icon = 'deck'
     navbar_link_list = 'schoolidolfestival'
+
+    _center_boost_to_cuteform = {
+        'unit':'circles-grid',
+        'subunit':'share',
+        'year':'education',
+    }
+
+    _card_type_to_cuteform = {
+        'perm':'chest',
+        'limited':'times',
+        'promo':'promo',
+    }
 
     filter_cuteform = CARDS_CUTEFORM
 
@@ -791,6 +823,12 @@ class CardCollection(MagiCollection):
 ############################################################
 # Skill Collection
 
+SKILL_TYPE_ICONS = {
+    'score':'scoreup', 'pl':'perfectlock',
+    'heal':'healer', 'stat':'statistics',
+    'support':'megaphone',
+}
+
 class SkillCollection(MagiCollection):
     queryset = models.Skill.objects.all()
     title = _('Skill')
@@ -804,8 +842,13 @@ class SkillCollection(MagiCollection):
     navbar_link = False
     permissions_required = ['manage_main_items']
 
-    filter_cuteform = CARDS_CUTEFORM
-
+##    filter_cuteform = {
+##        'i_skill_type': {
+##            'transform': CuteFormTransform.Flaticon,
+##            'to_cuteform': lambda _k, _v: SKILL_TYPE_ICONS[_k],
+##        },
+##    }
+    
     def to_fields(self, view, item, *args, **kwargs):
     
         fields = super(SkillCollection, self).to_fields(view, item, *args,
@@ -814,7 +857,7 @@ class SkillCollection(MagiCollection):
         return fields
 
     class ListView(MagiCollection.ListView):
-        #filter_form = forms.SkillFilterForm
+        filter_form = forms.SkillFilterForm
         item_template = custom_item_template
         per_line = 6
 
@@ -842,8 +885,21 @@ class SetCollection(MagiCollection):
     icon = 'scout-box'
     navbar_link_list = 'schoolidolfestival'
 
+    _set_type_icons = { 'gacha':'scout-box', 'event':'event' }
+
+    filter_cuteform = {
+        'i_unit_type': {
+            'image_folder': 'i_unit',
+            'title': _('Unit'),
+        },
+##        'i_set_type': {
+##            'transform': CuteFormTransform.Flaticon,
+##            'to_cuteform': lambda k, v: SetCollection._set_type_icons[k],
+##        },
+    }
+
     class ListView(MagiCollection.ListView):
-        #filter_form = forms.SetFilterForm
+        filter_form = forms.SetFilterForm
         item_template = custom_item_template
         per_line = 4
 

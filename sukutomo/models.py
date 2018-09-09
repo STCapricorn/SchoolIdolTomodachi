@@ -506,7 +506,6 @@ class Card(MagiModel):
 
     limited = models.BooleanField(_('Limited'), default=False)
     promo = models.BooleanField(_('Promo'), default=False)
-    support = models.BooleanField(_('Support'), default=False)
 
     VERSIONS_CHOICES = Account.VERSION_CHOICES
     c_versions = models.TextField(_('Server availability'), blank=True, null=True, default='"JP"')
@@ -516,7 +515,8 @@ class Card(MagiModel):
     name = models.CharField(_('Name'), max_length=100, null=True)
     NAMES_CHOICES = ALL_ALT_LANGUAGES
     d_names = models.TextField(null=True)
-    
+
+    i_skill_type = models.PositiveIntegerField(_('Skill Type'), choices=i_choices(Skill.SKILL_TYPE), null=True)
     skill = models.ForeignKey(Skill, related_name="added_skills", verbose_name=_('Skill'), null=True)
     skill_details = property(lambda _s: _s.skill.t_details)
     rate = models.PositiveIntegerField(_('Rate of Activation'), null=True)
@@ -602,7 +602,7 @@ class Card(MagiModel):
         ('subunit', _('Subunit')),
         ('year', _('Year')),
     )
-    i_group = models.PositiveIntegerField(_('Boost Group'), choices=i_choices(GROUP_BOOST), null=True)
+    i_group = models.PositiveIntegerField(_('Center Boost'), choices=i_choices(GROUP_BOOST), null=True)
     boost_percent = models.PositiveIntegerField(_('Boost Percentage'), null=True)
 
     image = models.ImageField(_('Image'), upload_to=uploadItem('c'), null=True)
@@ -710,6 +710,28 @@ class Card(MagiModel):
         ('pure', _('Pure'), '1'),
         ('cool', _('Cool'), '2'),
     )
+
+    @property
+    def stat_max(self, stat):
+        if getattr(self, '{}_max_idol'.format(stat)):
+            return getattr(self, '{}_max_idol'.format(stat))
+        elif getattr(self, '{}_max'.format(stat)):
+            return getattr(self, '{}_max'.format(stat))
+        elif getattr(self, '{}_min'.format(stat)):
+            return getattr(self, '{}'.format(stat))
+        return '???'
+            
+    @property
+    def max_smile(self):
+        return self.stat_max('smile')
+
+    @property
+    def max_pure(self):
+        return self.stat_max('pure')
+    
+    @property
+    def max_cool(self):
+        return self.stat_max('cool')
 
     in_set = models.ForeignKey(Set, related_name="sets", verbose_name=_('Sets'), null=True)
 

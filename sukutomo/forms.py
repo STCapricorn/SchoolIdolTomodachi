@@ -5,10 +5,37 @@ from django.db.models import Q
 from django.db.models.fields import BLANK_CHOICE_DASH
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _, string_concat
+from magi.item_model import i_choices
 from magi.utils import PastOnlyValidator
 from magi.forms import AutoForm, MagiFiltersForm, MagiFilter
 from sukutomo import models
 from sukutomo.django_translated import t
+
+############################################################
+# Form utils
+
+SUB_UNIT_CHOICE_FIELD = forms.forms.ChoiceField(
+    choices=BLANK_CHOICE_DASH + [
+        (u'{}'.format(i), unit) for i, unit in i_choices(models.Idol.UNIT_CHOICES)
+    ] + [
+        (u'{}'.format(i + 2), subunit)
+        for i, subunit in i_choices(models.Idol.SUBUNIT_CHOICES)
+    ],
+    label=_('Unit'),
+    initial=None,
+)
+
+def sub_unit_to_queryset(prefix=''):
+    def _sub_unit_to_queryset(form, queryset, request, value):
+        if int(value) < 2:
+            return queryset.filter(**{ u'{}i_unit'.format(prefix): value })
+        elif 2 < int(value) < 10:
+            return queryset.filter(**{ u'{}i_subunit'.format(prefix): int(value) - 2 })
+        return queryset
+    return _sub_unit_to_queryset
+
+############################################################
+# Account
 
 class AccountForm(forms.AccountForm):
     start_date = forms.forms.DateField(required=False, label=_('Start Date'), validators=[
@@ -24,6 +51,9 @@ class AccountForm(forms.AccountForm):
             del(self.fields['transfer_code'])
         if 'nickname' in self.fields and self.request.user.is_authenticated():
             self.fields['nickname'].initial = self.request.user.username
+      
+############################################################
+# Idol
 
 class IdolForm(AutoForm):
     class Meta:
@@ -46,9 +76,15 @@ class IdolFilterForm(MagiFiltersForm):
         ('hips', _('Hips')),
     ]
 
+    sub_unit = SUB_UNIT_CHOICE_FIELD
+    sub_unit_filter = MagiFilter(to_queryset=sub_unit_to_queryset())
+
     class Meta:
         model = models.Idol
-        fields = ('search', 'i_attribute', 'i_unit', 'i_subunit', 'i_school', 'i_year', 'i_astrological_sign', 'i_blood')
+        fields = ('search', 'sub_unit', 'i_school', 'i_year', 'i_attribute', 'i_astrological_sign', 'i_blood')
+
+############################################################
+# Event
 
 class EventForm(AutoForm):
 
@@ -104,6 +140,9 @@ class EventFilterForm(MagiFiltersForm):
     class Meta:
         model = models.Event
         fields = ('search', 'i_type', 'i_unit', 'version')
+
+############################################################
+# Song
 
 class SongForm(AutoForm):
 
@@ -162,6 +201,9 @@ class SongFilterForm(MagiFiltersForm):
     version = forms.forms.ChoiceField(label=_(u'Server availability'), choices=BLANK_CHOICE_DASH + models.Account.VERSION_CHOICES)
     version_filter = MagiFilter(to_queryset=lambda form, queryset, request, value: queryset.filter(c_versions__contains=value))
 
+    sub_unit = SUB_UNIT_CHOICE_FIELD
+    sub_unit_filter = MagiFilter(to_queryset=sub_unit_to_queryset())
+
     def __init__(self, *args, **kwargs):
         super(SongFilterForm, self).__init__(*args, **kwargs)
         if 'version' in self.fields:
@@ -169,11 +211,19 @@ class SongFilterForm(MagiFiltersForm):
             
     class Meta:
         model = models.Song
-        fields = ('search', 'i_attribute', 'i_unit', 'i_subunit', 'location', 'version', 'available')
+        fields = ('search', 'sub_unit', 'i_attribute', 'location', 'version', 'available')
+
+############################################################
+# Card
 
 class CardForm(AutoForm):
 
     release = forms.forms.DateField(label=_('Release date'), required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(CardForm, self).__init__(*args, **kwargs)
+        if 'c_versions' in self.fields:
+            self.fields['c_versions'].choices = [(name, verbose) for name, verbose in self.fields['c_versions'].choices if name not in ['KR', 'TW']]
     
     class Meta:
         model = models.Card
@@ -181,9 +231,47 @@ class CardForm(AutoForm):
         fields = '__all__'
 
 class CardFilterForm(MagiFiltersForm):
+    search_fields = ['card_id', 'name', 'details']
+#Note: Figure out how to add smile, pure, cool stat filter
+    ordering_fields = [
+        ('release', _('Release date')),
+        ('card_id', 'ID'),
+        ('_max_smile', _('Smile')),
+        ('_max_pure', _('Pure')),
+        ('_max_cool', _('Cool')),
+    ]
+
+    version = forms.forms.ChoiceField(label=_(u'Server availability'), choices=BLANK_CHOICE_DASH + models.Account.VERSION_CHOICES)
+    version_filter = MagiFilter(to_queryset=lambda form, queryset, request, value: queryset.filter(c_versions__contains=value))
+
+    def card_type_to_queryset(form, queryset, request, value):
+        if value == 'limited':
+            return queryset.filter(limited=True)
+        elif value == 'promo':
+            return queryset.filter(promo=True)
+        elif value == 'perm':
+            return queryset.filter(limited=False).filter(promo=False).filter(skill_type!='support')
+        return queryset
+
+    card_type = forms.forms.ChoiceField(label=_(u'Type'), choices=BLANK_CHOICE_DASH + [
+        ('perm', _(u'Permanent')),
+        ('limited', _(u'Limited')),
+        ('promo', _(u'Promo')),
+    ])
+    card_type_filter = MagiFilter(to_queryset=card_type_to_queryset)
+
+    def __init__(self, *args, **kwargs):
+        super(CardFilterForm, self).__init__(*args, **kwargs)
+        if 'version' in self.fields:
+            self.fields['version'].choices = [(name, verbose) for name, verbose in self.fields['version'].choices if name not in ['KR', 'TW']]
+# Add skill filter
+# Combine unit, subunit, and idol field (and make idols work proper yo) ><
     class Meta:
         model = models.Card
-        fields = ('in_set', )
+        fields = ('search', 'idol', 'card_type', 'i_rarity', 'i_attribute', 'version', 'i_center', 'i_group', 'in_set')
+
+############################################################
+# Skill
 
 class SkillForm(AutoForm):
     class Meta:
@@ -191,8 +279,25 @@ class SkillForm(AutoForm):
         save_owner_on_creation = True
         fields = '__all__'
 
+class SkillFilterForm(MagiFiltersForm):
+    search_fields = ['name', 'details']
+
+    class Meta:
+        model = models.Skill
+        fields = ('search', 'i_skill_type', )
+
+############################################################
+# Set
+
 class SetForm(AutoForm):
     class Meta:
         model = models.Set
         save_owner_on_creation = True
         fields = '__all__'
+
+class SetFilterForm(MagiFiltersForm):
+    search_fields = ['title']
+
+    class Meta:
+        model = models.Set
+        fields = ('search', 'i_set_type', 'i_unit_type', )
