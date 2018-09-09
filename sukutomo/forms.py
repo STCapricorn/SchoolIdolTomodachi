@@ -29,7 +29,7 @@ def sub_unit_to_queryset(prefix=''):
     def _sub_unit_to_queryset(form, queryset, request, value):
         if int(value) < 2:
             return queryset.filter(**{ u'{}i_unit'.format(prefix): value })
-        elif 2 < int(value) < 10:
+        elif int(value) < 10:
             return queryset.filter(**{ u'{}i_subunit'.format(prefix): int(value) - 2 })
         return queryset
     return _sub_unit_to_queryset
@@ -244,6 +244,9 @@ class CardFilterForm(MagiFiltersForm):
     version = forms.forms.ChoiceField(label=_(u'Server availability'), choices=BLANK_CHOICE_DASH + models.Account.VERSION_CHOICES)
     version_filter = MagiFilter(to_queryset=lambda form, queryset, request, value: queryset.filter(c_versions__contains=value))
 
+    sub_unit = SUB_UNIT_CHOICE_FIELD
+    sub_unit_filter = MagiFilter(to_queryset=sub_unit_to_queryset(prefix='idol__'))
+
     def card_type_to_queryset(form, queryset, request, value):
         if value == 'limited':
             return queryset.filter(limited=True)
@@ -268,7 +271,7 @@ class CardFilterForm(MagiFiltersForm):
 # Combine unit, subunit, and idol field (and make idols work proper yo) ><
     class Meta:
         model = models.Card
-        fields = ('search', 'idol', 'card_type', 'i_rarity', 'i_attribute', 'version', 'i_center', 'i_group', 'in_set')
+        fields = ('search', 'idol', 'sub_unit', 'card_type', 'i_rarity', 'i_attribute', 'version', 'i_center', 'i_group', 'in_set')
 
 ############################################################
 # Skill
@@ -300,4 +303,4 @@ class SetFilterForm(MagiFiltersForm):
 
     class Meta:
         model = models.Set
-        fields = ('search', 'i_set_type', 'i_unit_type', )
+        fields = ('search', 'i_set_type', 'i_unit', )

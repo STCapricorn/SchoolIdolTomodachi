@@ -570,6 +570,17 @@ CARDS_CUTEFORM = {
     },
     'i_subunit': {
     },
+    'sub_unit': {
+        'to_cuteform': lambda k, v: (
+            staticImageURL(k, folder='i_unit', extension='png') if float(k) - 2 < 0 else
+            staticImageURL(int(k) - 2, folder='i_subunit', extension='png')
+            ),
+        'title': _('Unit'),
+        'extra_settings': {
+            'modal': 'true',
+            'modal-text': 'true',
+        },
+    },
     'i_attribute': {
     },
     'i_rarity': {
@@ -888,9 +899,7 @@ class SetCollection(MagiCollection):
     _set_type_icons = { 'gacha':'scout-box', 'event':'event' }
 
     filter_cuteform = {
-        'i_unit_type': {
-            'image_folder': 'i_unit',
-            'title': _('Unit'),
+        'i_unit': {
         },
 ##        'i_set_type': {
 ##            'transform': CuteFormTransform.Flaticon,

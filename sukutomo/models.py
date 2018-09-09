@@ -426,8 +426,8 @@ class Set(MagiModel):
             set_type = self.set_type
         else:
             set_type = '???'
-        if self.unit_type:
-            unit_type = self.unit_type
+        if self.unit:
+            unit_type = self.unit
         else:
             unit_type = '???'   
         return u'{} ({}, {})'.format(self.t_title, set_type, unit_type)
@@ -450,8 +450,8 @@ class Set(MagiModel):
     )
     i_set_type =  models.PositiveIntegerField(_('Type'), choices=i_choices(SET_TYPES), null=True)
 
-    UNIT_TYPES = Idol.UNIT_CHOICES
-    i_unit_type = models.PositiveIntegerField(_('Unit'), choices=i_choices(UNIT_TYPES), null=True)
+    UNIT_CHOICES = Idol.UNIT_CHOICES
+    i_unit = models.PositiveIntegerField(_('Unit'), choices=i_choices(UNIT_CHOICES), null=True)
 
 ############################################################
 # Cards
