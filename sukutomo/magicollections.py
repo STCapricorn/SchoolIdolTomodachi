@@ -845,9 +845,9 @@ class CardCollection(MagiCollection):
             queryset = super(CardCollection.ListView, self).get_queryset(queryset, parameters, request)
             if request.GET.get('ordering', None) in ['max_smile', 'max_pure, max_cool']:
                 queryset = queryset.extra(select={
-                    'max_smile': CASE WHEN 'smile_max_idol' > 0 THEN 'smile_max_idol' CASE WHEN 'smile_max' > 0 THEN 'smile_max' CASE WHEN 'smile_min' THEN 'smile_min' ELSE '???' END,
-                    'max_pure': CASE WHEN 'pure_max_idol' > 0 THEN 'pure_max_idol' CASE WHEN 'pure_max' > 0 THEN 'pure_max' CASE WHEN 'pure_min' THEN 'pure_min' ELSE '???' END,
-                    'max_cool': CASE WHEN 'cool_max_idol' > 0 THEN 'cool_max_idol' CASE WHEN 'cool_max' > 0 THEN 'cool_max' CASE WHEN 'cool_min' THEN 'cool_min' ELSE '???' END,
+                    'max_smile': 'smile_max_idol' or 'smile_max' or 'smile_min',
+                    'max_pure': 'pure_max_idol' or 'pure_max' or 'pure_min',
+                    'max_cool': 'cool_max_idol' or 'cool_max' or 'cool_min',
                 })
             return queryset
 
