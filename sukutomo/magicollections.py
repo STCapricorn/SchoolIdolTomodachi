@@ -562,7 +562,7 @@ class SongCollection(MagiCollection):
 CARD_AUTO_EXCLUDE = [
     'limited', 'promo', 'support', 'rate', 'i_dependency', 'chance',
     'number', 'length', 'i_center', 'i_group', 'boost_percent',
-    'smile_min', 'pure_min', 'cool_min', 'hp',
+    'smile_min', 'pure_min', 'cool_min', 'hp', 'i_skill_type',
 ] + models.Card.IDOLIZED_FIELDS + models.Card.UNIDOLIZED_FIELDS
 
 CARDS_CUTEFORM = {
@@ -598,9 +598,27 @@ CARDS_CUTEFORM = {
                 'modal-text': 'true',
             },
     },
+    'skill': {
+        'transform': CuteFormTransform.FlaticonWithText, 
+        'extra_settings': {
+            'modal': 'true',
+            'modal-text': 'true',
+        },
+    },
+    'i_skill_type': {
+            'transform': CuteFormTransform.Flaticon,
+            'to_cuteform': lambda _k, _v: SKILL_TYPE_ICONS[models.Skill.get_reverse_i('skill_type', _k)],
+        },
+    'in_set': {
+        'transform': CuteFormTransform.FlaticonWithText, 
+        'extra_settings': {
+            'modal': 'true',
+            'modal-text': 'true',
+        },
+    },
     'i_group': {
         'transform': CuteFormTransform.Flaticon,
-##        'to_cuteform': lambda k, v: CardCollection._center_boost_to_cuteform[models.Card.get_reverse_i('group', k)]
+        'to_cuteform': lambda k, v: CardCollection._center_boost_to_cuteform[models.Card.get_reverse_i('group', k)]
     },
     'card_type': {
         'to_cuteform': lambda k, v: CardCollection._card_type_to_cuteform[k],
@@ -734,7 +752,7 @@ class CardCollection(MagiCollection):
                 if item.rarity in ['UR', 'SSR']:
                     leader_second = _('plus {group} members\' {} pts. up by {}%')
                     if item.group is not 0 and item.boost_percent is not None:
-                        for gvariable, ggvariable in models.Card.GROUP_BOOST:
+                        for gvariable, ggvariable in models.Card.GROUP_CHOICES:
                             if ggvariable is item.t_group:
                                 if item.t_group is not _('Unit'):
                                     og = leader_second
@@ -821,15 +839,54 @@ class CardCollection(MagiCollection):
         item_template = custom_item_template
         per_line = 3
         default_ordering = '-release,-card_id'
+        ajax_pagination_callback = 'loadCardList'
+
+        def get_queryset(self, queryset, parameters, request):
+            queryset = super(CardCollection.ListView, self).get_queryset(queryset, parameters, request)
+            if request.GET.get('ordering', None) in ['max_smile', 'max_pure, max_cool']:
+                queryset = queryset.extra(select={
+                    'max_smile': CASE WHEN 'smile_max_idol' > 0 THEN 'smile_max_idol' CASE WHEN 'smile_max' > 0 THEN 'smile_max' CASE WHEN 'smile_min' THEN 'smile_min' ELSE '???' END,
+                    'max_pure': CASE WHEN 'pure_max_idol' > 0 THEN 'pure_max_idol' CASE WHEN 'pure_max' > 0 THEN 'pure_max' CASE WHEN 'pure_min' THEN 'pure_min' ELSE '???' END,
+                    'max_cool': CASE WHEN 'cool_max_idol' > 0 THEN 'cool_max_idol' CASE WHEN 'cool_max' > 0 THEN 'cool_max' CASE WHEN 'cool_min' THEN 'cool_min' ELSE '???' END,
+                })
+            return queryset
+
+        def ordering_fields(self, item, only_fields=None, *args, **kwargs):
+            fields = super(CardCollection.ListView, self).ordering_fields(item, *args, only_fields=only_fields, **kwargs)
+            if 'max_smile' in only_fields:
+                fields['max_smile'] = {
+                    'verbose_name':  _('Smile'),
+                    'value': item.smile_max_idol or item.smile_max or item.smile_min or '???',
+                    'type': 'text',
+                    'image': staticImageURL('0', folder='i_attribute', extension='png'),
+                }
+            if 'max_pure' in only_fields:
+                fields['max_pure'] = {
+                    'verbose_name':  _('Pure'),
+                    'value': item.pure_max_idol or item.pure_max or item.pure_min or '???',
+                    'type': 'text',
+                    'image': staticImageURL('1', folder='i_attribute', extension='png'),
+                }
+            if 'max_cool' in only_fields:
+                fields['max_cool'] = {
+                    'verbose_name':  _('Cool'),
+                    'value': item.cool_max_idol or item.cool_max or item.cool_min or '???',
+                    'type': 'text',
+                    'image': staticImageURL('2', folder='i_attribute', extension='png'),
+                }
+
+            return fields
 
     class AddView(MagiCollection.AddView):
         staff_required = True
         permissions_required = ['manage_main_items']
+        ajax_callback = 'loadCardForm'
 
     class EditView(MagiCollection.EditView):
         staff_required = True
         permissions_required = ['manage_main_items']
         allow_delete = True
+        ajax_callback = 'loadCardForm'
 
 ############################################################
 # Skill Collection
@@ -853,12 +910,12 @@ class SkillCollection(MagiCollection):
     navbar_link = False
     permissions_required = ['manage_main_items']
 
-##    filter_cuteform = {
-##        'i_skill_type': {
-##            'transform': CuteFormTransform.Flaticon,
-##            'to_cuteform': lambda _k, _v: SKILL_TYPE_ICONS[_k],
-##        },
-##    }
+    filter_cuteform = {
+        'i_skill_type': {
+            'transform': CuteFormTransform.Flaticon,
+            'to_cuteform': lambda _k, _v: SKILL_TYPE_ICONS[models.Skill.get_reverse_i('skill_type', _k)],
+        },
+    }
     
     def to_fields(self, view, item, *args, **kwargs):
     
@@ -901,10 +958,10 @@ class SetCollection(MagiCollection):
     filter_cuteform = {
         'i_unit': {
         },
-##        'i_set_type': {
-##            'transform': CuteFormTransform.Flaticon,
-##            'to_cuteform': lambda k, v: SetCollection._set_type_icons[k],
-##        },
+        'i_set_type': {
+            'transform': CuteFormTransform.Flaticon,
+            'to_cuteform': lambda k, v: SetCollection._set_type_icons[models.Set.get_reverse_i('set_type', k)],
+        },
     }
 
     class ListView(MagiCollection.ListView):

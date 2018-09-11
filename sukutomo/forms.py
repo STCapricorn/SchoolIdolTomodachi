@@ -232,13 +232,13 @@ class CardForm(AutoForm):
 
 class CardFilterForm(MagiFiltersForm):
     search_fields = ['card_id', 'name', 'details']
-#Note: Figure out how to add smile, pure, cool stat filter
+#Note: Figure out how to add pure, cool stat filter
     ordering_fields = [
         ('release', _('Release date')),
         ('card_id', 'ID'),
-        ('_max_smile', _('Smile')),
-        ('_max_pure', _('Pure')),
-        ('_max_cool', _('Cool')),
+        ('max_smile', _('Smile')),
+        ('max_pure', _('Pure')),
+        ('max_cool', _('Cool')),
     ]
 
     version = forms.forms.ChoiceField(label=_(u'Server availability'), choices=BLANK_CHOICE_DASH + models.Account.VERSION_CHOICES)
@@ -267,11 +267,11 @@ class CardFilterForm(MagiFiltersForm):
         super(CardFilterForm, self).__init__(*args, **kwargs)
         if 'version' in self.fields:
             self.fields['version'].choices = [(name, verbose) for name, verbose in self.fields['version'].choices if name not in ['KR', 'TW']]
-# Add skill filter
+
 # Combine unit, subunit, and idol field (and make idols work proper yo) ><
     class Meta:
         model = models.Card
-        fields = ('search', 'idol', 'sub_unit', 'card_type', 'i_rarity', 'i_attribute', 'version', 'i_center', 'i_group', 'in_set')
+        fields = ('search', 'idol', 'sub_unit', 'card_type', 'i_rarity', 'i_attribute', 'version', 'i_skill_type', 'i_center', 'i_group', 'in_set',)
 
 ############################################################
 # Skill

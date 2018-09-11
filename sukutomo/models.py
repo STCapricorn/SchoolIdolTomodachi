@@ -395,20 +395,20 @@ class Skill(MagiModel):
         return u'{}'.format(self.t_name)
 
     def card_html(self):
-        return string_concat('<b>', self.t_name, ' <span class="text-muted">(', self.skill_type, ')</span></b>')
+        return string_concat('<b>', self.t_name, ' <span class="text-muted">(', self.t_skill_type, ')</span></b>')
 
     name = models.CharField(_('Name'), max_length=100, unique=True)
     NAMES_CHOICES = ALL_ALT_LANGUAGES
     d_names = models.TextField(null=True)
 
-    SKILL_TYPE = (
+    SKILL_TYPE_CHOICES = [
         ('score', _('Score Up')),
         ('pl', _('Timing Boost')),
         ('heal', _('Recovery')),
         ('stat', _('Stat Effect')),
         ('support', _('Support')),
-    )
-    i_skill_type =  models.PositiveIntegerField(_('Skill Type'), choices=i_choices(SKILL_TYPE), null=True)
+    ]
+    i_skill_type =  models.PositiveIntegerField(_('Skill Type'), choices=i_choices(SKILL_TYPE_CHOICES), null=True)
 
     details = models.TextField(_('Details'), help_text=_('Optional variables: {rate}, {dependency}, {chance}, {unit}, {subunit}, {year}, {number}, {length}'), null=True)
     DETAILSS_CHOICES = ALL_ALT_LANGUAGES
@@ -444,11 +444,11 @@ class Set(MagiModel):
     TITLES_CHOICES = ALL_ALT_LANGUAGES
     d_titles = models.TextField(null=True)
 
-    SET_TYPES = (
+    SET_TYPE_CHOICES = (
         ('gacha', _('Gacha')),
         ('event', _('Event')),
     )
-    i_set_type =  models.PositiveIntegerField(_('Type'), choices=i_choices(SET_TYPES), null=True)
+    i_set_type =  models.PositiveIntegerField(_('Type'), choices=i_choices(SET_TYPE_CHOICES), null=True)
 
     UNIT_CHOICES = Idol.UNIT_CHOICES
     i_unit = models.PositiveIntegerField(_('Unit'), choices=i_choices(UNIT_CHOICES), null=True)
@@ -516,7 +516,7 @@ class Card(MagiModel):
     NAMES_CHOICES = ALL_ALT_LANGUAGES
     d_names = models.TextField(null=True)
 
-    i_skill_type = models.PositiveIntegerField(_('Skill Type'), choices=i_choices(Skill.SKILL_TYPE), null=True)
+    i_skill_type = models.PositiveIntegerField(_('Skill Type'), choices=i_choices(Skill.SKILL_TYPE_CHOICES), null=True)
     skill = models.ForeignKey(Skill, related_name="added_skills", verbose_name=_('Skill'), null=True)
     skill_details = property(lambda _s: _s.skill.t_details)
     rate = models.PositiveIntegerField(_('Rate of Activation'), null=True)
@@ -597,12 +597,12 @@ class Card(MagiModel):
             return self.center_off_attribute 
         return self.center_on_attribute
 
-    GROUP_BOOST = (
+    GROUP_CHOICES = (
         ('unit', _('Unit')),
         ('subunit', _('Subunit')),
         ('year', _('Year')),
     )
-    i_group = models.PositiveIntegerField(_('Center Boost'), choices=i_choices(GROUP_BOOST), null=True)
+    i_group = models.PositiveIntegerField(_('Boost Group'), choices=i_choices(GROUP_CHOICES), null=True)
     boost_percent = models.PositiveIntegerField(_('Boost Percentage'), null=True)
 
     image = models.ImageField(_('Image'), upload_to=uploadItem('c'), null=True)
@@ -710,28 +710,6 @@ class Card(MagiModel):
         ('pure', _('Pure'), '1'),
         ('cool', _('Cool'), '2'),
     )
-
-    @property
-    def stat_max(self, stat):
-        if getattr(self, '{}_max_idol'.format(stat)):
-            return getattr(self, '{}_max_idol'.format(stat))
-        elif getattr(self, '{}_max'.format(stat)):
-            return getattr(self, '{}_max'.format(stat))
-        elif getattr(self, '{}_min'.format(stat)):
-            return getattr(self, '{}'.format(stat))
-        return '???'
-            
-    @property
-    def max_smile(self):
-        return self.stat_max('smile')
-
-    @property
-    def max_pure(self):
-        return self.stat_max('pure')
-    
-    @property
-    def max_cool(self):
-        return self.stat_max('cool')
 
     in_set = models.ForeignKey(Set, related_name="sets", verbose_name=_('Sets'), null=True)
 
