@@ -98,6 +98,12 @@ class IdolCollection(MagiCollection):
     icon = 'idol'
     navbar_link_list = 'lovelive'
 
+    _idol_images = [
+        (
+        idol.image_url,
+        ) for idol in models.Idol.objects.all().order_by('id')
+    ]
+
     def to_fields(self, view, item, *args, **kwargs):
 
         fields = super(IdolCollection, self).to_fields(view, item, *args, icons=IDOLS_ICONS,  images={
@@ -665,7 +671,7 @@ class CardCollection(MagiCollection):
 
     _card_type_to_cuteform = {
         'perm':'chest',
-        'limited':'times',
+        'limited':'hourglass',
         'promo':'promo',
     }
 

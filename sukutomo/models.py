@@ -423,7 +423,7 @@ class Set(MagiModel):
 
     def __unicode__(self):
         if self.set_type:
-            set_type = self.set_type
+            set_type = self.t_set_type
         else:
             set_type = '???'
         if self.unit:
