@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
+from django.conf import settings as django_settings
 from django.utils.translation import ugettext_lazy as _, get_language
 from django.utils.formats import date_format
 from django.utils.safestring import mark_safe
 from django.utils.translation import string_concat
+from magi import settings
 from magi.item_model import getInfoFromChoices
 from magi.magicollections import MagiCollection, AccountCollection as _AccountCollection, PrizeCollection as _PrizeCollection
-from magi.utils import staticImageURL, CuteFormType, CuteFormTransform, custom_item_template, torfc2822, setSubField, jsv
+from magi.utils import staticImageURL, CuteFormType, CuteFormTransform, custom_item_template, torfc2822, setSubField, jsv, FAVORITE_CHARACTERS_IMAGES
 from sukutomo import forms, models
 
 ############################################################
@@ -53,7 +55,7 @@ IDOLS_ICONS = {
 }
 
 IDOL_ORDER = [
-    'image', 'name', 'japanese_name', 'attribute', 'unit', 'subunit', 'school',
+    'image', 'name', 'attribute', 'unit', 'subunit', 'school',
     'year', 'astrological_sign', 'birthday', 'age', 'blood', 'measurements', 'color',
     'hobbies', 'favorite_food', 'least_favorite_food', 'description',
 ]
@@ -97,12 +99,6 @@ class IdolCollection(MagiCollection):
     translated_fields = ('name', 'hobbies', 'favorite_food', 'least_favorite_food', 'description', )
     icon = 'idol'
     navbar_link_list = 'lovelive'
-
-    _idol_images = [
-        (
-        idol.image_url,
-        ) for idol in models.Idol.objects.all().order_by('id')
-    ]
 
     def to_fields(self, view, item, *args, **kwargs):
 
@@ -571,16 +567,21 @@ CARD_AUTO_EXCLUDE = [
     'smile_min', 'pure_min', 'cool_min', 'hp', 'i_skill_type',
 ] + models.Card.IDOLIZED_FIELDS + models.Card.UNIDOLIZED_FIELDS
 
+def _idol_sub_unit_to_cuteform(k):
+    if float(k) - 2 < 0:
+        return staticImageURL(k, folder='i_unit', extension='png')
+    elif float(k) - 10 < 0:
+        return staticImageURL(int(k) - 2, folder='i_subunit', extension='png')
+    else:
+        return FAVORITE_CHARACTERS_IMAGES[int(k) - 10]
+
 CARDS_CUTEFORM = {
     'i_unit': {
     },
     'i_subunit': {
     },
-    'sub_unit': {
-        'to_cuteform': lambda k, v: (
-            staticImageURL(k, folder='i_unit', extension='png') if float(k) - 2 < 0 else
-            staticImageURL(int(k) - 2, folder='i_subunit', extension='png')
-            ),
+    'idol_sub_unit': {
+        'to_cuteform': lambda k, v: _idol_sub_unit_to_cuteform(k),
         'title': _('Unit'),
         'extra_settings': {
             'modal': 'true',
@@ -599,6 +600,8 @@ CARDS_CUTEFORM = {
         'transform': CuteFormTransform.ImagePath,
     },
     'idol': {
+        'to_cuteform': lambda k, v: FAVORITE_CHARACTERS_IMAGES[k],
+        'title': _('Idol'),
         'extra_settings': {
                 'modal': 'true',
                 'modal-text': 'true',
@@ -892,13 +895,11 @@ class CardCollection(MagiCollection):
     class AddView(MagiCollection.AddView):
         staff_required = True
         permissions_required = ['manage_main_items']
-        ajax_callback = 'loadCardForm'
 
     class EditView(MagiCollection.EditView):
         staff_required = True
         permissions_required = ['manage_main_items']
         allow_delete = True
-        ajax_callback = 'loadCardForm'
 
 ############################################################
 # Skill Collection

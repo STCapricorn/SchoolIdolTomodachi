@@ -38,17 +38,17 @@ TOTAL_DONATORS = getattr(django_settings, 'TOTAL_DONATORS', 2) + 2
 TWITTER_HANDLE = 'schoolidolu'
 
 USER_COLORS = [
-    ('smile', 'Smile', 'btn-smile', '#e6006f'),
-    ('pure', 'Pure', 'btn-pure', '#20ab53'),
-    ('cool', 'Cool', 'btn-cool', '#0098eb'),
-    ('all', 'All', 'btn-all', '#8f56cc'),
+    ('smile', _('Smile'), 'btn-smile', '#e6006f'),
+    ('pure', _('Pure'), 'btn-pure', '#20ab53'),
+    ('cool', _('Cool'), 'btn-cool', '#0098eb'),
+    ('all', _('All'), 'btn-all', '#8f56cc'),
 ]
 
 SITE_NAV_LOGO = 'SchoolIdolTomodachi.png'
 
 # todo
 # SITE_LOGO = Path of the image displayed on the homepage.	value of SITE_IMAGE
-# FAVORITE_CHARACTERS = django_settings.FAVORITE_CHARACTERS
+FAVORITE_CHARACTERS = django_settings.FAVORITE_CHARACTERS
 FAVORITE_CHARACTER_NAME = _('{nth} Favorite Character')
 FAVORITE_CHARACTER_TO_URL = lambda link: '/idol/{pk}/{name}/'.format(pk=link.raw_value, name=tourldash(link.value))
 # LATEST_NEWS = django_settings.LATEST_NEWS

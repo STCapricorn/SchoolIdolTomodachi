@@ -12,7 +12,14 @@ from sukutomo import models
 
 def generate_settings():
 
-    print 'Get max stats'
+    print 'Get Idols'
+    favorite_idols = [(
+        idol.pk,
+        idol.name,
+        idol.image_url,
+    ) for idol in models.Idol.objects.all().order_by('-i_school')]
+
+    print 'Get Max Stats'
     stats = {
         'smile_max_idol': None,
         'pure_max_idol': None,
@@ -30,6 +37,7 @@ def generate_settings():
     s = u'\
 # -*- coding: utf-8 -*-\n\
 import datetime\n\
+FAVORITE_CHARACTERS = ' + unicode(favorite_idols) + u'\n\
 MAX_STATS = ' + unicode(stats) + u'\n\
 '
     print s
