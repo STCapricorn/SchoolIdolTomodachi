@@ -633,7 +633,7 @@ CARDS_CUTEFORM = {
 }
 
 CARDS_ICONS = {
-    'name': 'id', 'card_id': 'id', 'versions': 'world', 'release': 'date',
+    'name': 'id', 'versions': 'world', 'release': 'date',
     'images': 'pictures', 'icons': 'pictures', 'transparents': 'pictures',
     'art': 'pictures', 'hp': 'hp', 'details': 'author',
 }
@@ -646,7 +646,7 @@ CARD_IMAGES = {
 }
 
 CARD_ORDER = [
-    'card_id', 'name', 'idol_details', 'i_rarity', 'i_attribute',
+    'id', 'name', 'idol_details', 'i_rarity', 'i_attribute',
     'c_versions', 'release', 'set', 'main_skill', 'leader_skill',
     'icons', 'images', 'arts', 'transparents', 'details'
 ]
@@ -692,8 +692,6 @@ class CardCollection(MagiCollection):
         }, **kwargs)
 
         setSubField(fields, 'release', key='timezones', value=['Asia/Tokyo'])
-        setSubField(fields, 'card_id', key='type', value='text')
-        setSubField(fields, 'card_id', key='value', value=u'#{}'.format(item.card_id))
         return fields
 
     class ItemView(MagiCollection.ItemView):
@@ -704,6 +702,14 @@ class CardCollection(MagiCollection):
             if extra_fields is None: extra_fields = []
             if exclude_fields is None: exclude_fields = []
             if order is None: order = []
+            
+            #Add ID Field
+            extra_fields.append(('id', {
+                'verbose_name': _(u'ID'),
+                'type': 'text',
+                'value': u'#{}'.format(item.id),
+                'icon': 'id',
+                }))
 
             #Add Idol field
             if item.idol:
@@ -844,16 +850,16 @@ class CardCollection(MagiCollection):
         filter_form = forms.CardFilterForm
         item_template = custom_item_template
         per_line = 3
-        default_ordering = '-release,-card_id'
+        default_ordering = '-release,-id'
         ajax_pagination_callback = 'loadCardList'
 
         def get_queryset(self, queryset, parameters, request):
             queryset = super(CardCollection.ListView, self).get_queryset(queryset, parameters, request)
-            if request.GET.get('ordering', None) in ['max_smile', 'max_pure, max_cool']:
+            if request.GET.get('ordering', None) in ['max_smile', 'max_pure', 'max_cool']:
                 queryset = queryset.extra(select={
-                    'max_smile': 'smile_max_idol' or 'smile_max' or 'smile_min',
-                    'max_pure': 'pure_max_idol' or 'pure_max' or 'pure_min',
-                    'max_cool': 'cool_max_idol' or 'cool_max' or 'cool_min',
+                    'max_smile': 'CASE WHEN smile_max_idol NOT NULL THEN smile_max_idol WHEN smile_max NOT NULL THEN smile_max WHEN smile_min NOT NULL THEN smile_min END',
+                    'max_pure': 'CASE WHEN pure_max_idol NOT NULL THEN pure_max_idol WHEN pure_max NOT NULL THEN pure_max WHEN pure_min NOT NULL THEN pure_min END',
+                    'max_cool': 'CASE WHEN cool_max_idol NOT NULL THEN cool_max_idol WHEN cool_max NOT NULL THEN cool_max WHEN cool_min NOT NULL THEN cool_min END',
                 })
             return queryset
 

@@ -470,9 +470,9 @@ class Card(MagiModel):
             idol=self.idol
         if self.attribute:
             attribute = self.t_attribute
-        return u'#{} {} {} {}'.format(self.card_id, attribute, rarity, idol)
+        return u'#{} {} {} {}'.format(self.id, attribute, rarity, idol)
 
-    card_id = models.PositiveIntegerField(_('ID'), unique=True)
+    id = models.PositiveIntegerField(_('ID'), unique=True, primary_key=True)
     idol = models.ForeignKey(Idol, related_name='card_idols', null=True)
 
     RARITY = OrderedDict([

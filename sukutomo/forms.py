@@ -34,6 +34,17 @@ def sub_unit_to_queryset(prefix=''):
         return queryset
     return _sub_unit_to_queryset
 
+IDOL_SUB_UNIT_CHOICE_FIELD = forms.forms.ChoiceField(
+    choices=BLANK_CHOICE_DASH + [
+        (u'{}'.format(i), unit) for i, unit in i_choices(models.Song.UNIT_CHOICES)
+    ] + [
+        (u'{}'.format(i + 2), subunit)
+        for i, subunit in i_choices(models.Song.SUBUNIT_CHOICES)
+    ],
+    label=_('Unit'),
+    initial=None,
+)
+
 ############################################################
 # Account
 
@@ -192,8 +203,17 @@ class SongFilterForm(MagiFiltersForm):
         ('master_notes', string_concat('MASTER - ', _('Notes'))),
     ]
 
+    def _available_to_queryset(form, queryset, request, value):
+        if int(value) == 2:
+            return queryset.filter(Q(b_side_start__lte=timezone.now(), b_side_end__gte=timezone.now()) | Q(release__lte=timezone.now()))
+        elif int(value) == 3:
+            return queryset.filter(
+                Q(release=None) & (Q(b_side_start__gte=timezone.now()) | Q(b_side_end__lte=timezone.now(), release=None)) | Q(release__gte=timezone.now()) | Q(release=None)
+            )
+        return queryset
+
     available = forms.forms.NullBooleanField(initial=None, required=False, label=_('Currently available'))
-    available_filter = MagiFilter(to_queryset=lambda form, queryset, request, value: queryset.filter(Q(b_side_start__lte=timezone.now(), b_side_end__gte=timezone.now) | Q(b_side_start=None, b_side_end=None, release__lte=timezone.now())))
+    available_filter = MagiFilter(to_queryset=_available_to_queryset)
 
     location = forms.forms.ChoiceField(label=_('Location'), choices=BLANK_CHOICE_DASH + models.Song.LOCATIONS_CHOICES)
     location_filter = MagiFilter(to_queryset=lambda form, queryset, request, value: queryset.filter(c_locations__contains=value))
@@ -224,7 +244,7 @@ class CardForm(AutoForm):
         super(CardForm, self).__init__(*args, **kwargs)
         if 'c_versions' in self.fields:
             self.fields['c_versions'].choices = [(name, verbose) for name, verbose in self.fields['c_versions'].choices if name not in ['KR', 'TW']]
-    
+
     class Meta:
         model = models.Card
         save_owner_on_creation = True
@@ -232,10 +252,10 @@ class CardForm(AutoForm):
 
 class CardFilterForm(MagiFiltersForm):
     search_fields = ['card_id', 'name', 'details']
-#Note: Figure out how to add pure, cool stat filter
+
     ordering_fields = [
         ('release', _('Release date')),
-        ('card_id', 'ID'),
+        ('id', 'ID'),
         ('max_smile', _('Smile')),
         ('max_pure', _('Pure')),
         ('max_cool', _('Cool')),
