@@ -17,17 +17,16 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Card',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('card_id', models.PositiveIntegerField(unique=True, verbose_name='ID')),
+                ('id', models.PositiveIntegerField(unique=True, serialize=False, verbose_name='ID', primary_key=True)),
                 ('i_rarity', models.PositiveIntegerField(null=True, verbose_name='Rarity', choices=[(0, b'N'), (1, b'R'), (2, b'SR'), (3, b'SSR'), (4, b'UR')])),
                 ('i_attribute', models.PositiveIntegerField(null=True, verbose_name='Attribute', choices=[(0, 'Smile'), (1, 'Pure'), (2, 'Cool'), (3, 'All')])),
                 ('limited', models.BooleanField(default=False, verbose_name='Limited')),
                 ('promo', models.BooleanField(default=False, verbose_name='Promo')),
-                ('support', models.BooleanField(default=False, verbose_name='Support')),
                 ('c_versions', models.TextField(default=b'"JP"', null=True, verbose_name='Server availability', blank=True)),
                 ('release', models.DateTimeField(null=True, verbose_name='Release date')),
                 ('name', models.CharField(max_length=100, null=True, verbose_name='Name')),
                 ('d_names', models.TextField(null=True)),
+                ('i_skill_type', models.PositiveIntegerField(null=True, verbose_name='Skill Type', choices=[(0, 'Score Up'), (1, 'Timing Boost'), (2, 'Recovery'), (3, 'Stat Effect'), (4, 'Support')])),
                 ('rate', models.PositiveIntegerField(null=True, verbose_name='Rate of Activation')),
                 ('i_dependency', models.PositiveIntegerField(null=True, verbose_name='Dependency', choices=[(0, 'notes'), (1, b'PERFECTs'), (2, 'seconds'), (3, 'x combo')])),
                 ('chance', models.PositiveIntegerField(null=True, verbose_name='% Chance')),
@@ -76,7 +75,7 @@ class Migration(migrations.Migration):
                 ('title', models.CharField(unique=True, max_length=100, verbose_name='Title')),
                 ('d_titles', models.TextField(null=True)),
                 ('i_set_type', models.PositiveIntegerField(null=True, verbose_name='Type', choices=[(0, 'Gacha'), (1, 'Event')])),
-                ('i_unit_type', models.PositiveIntegerField(null=True, verbose_name='Unit', choices=[(0, "\u03bc's"), (1, b'Aqours')])),
+                ('i_unit', models.PositiveIntegerField(null=True, verbose_name='Unit', choices=[(0, "\u03bc's"), (1, b'Aqours')])),
                 ('owner', models.ForeignKey(related_name='added_sets', to=settings.AUTH_USER_MODEL, null=True)),
             ],
             options={
