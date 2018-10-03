@@ -2,7 +2,13 @@
 <div class="row">
   <div class="col-md-5">
     {% if song.cover %}
-      <img src="{{ song.cover_url }}" alt="{{ song }}" class="img-responsive song-cover">
+      {% if current == 'song_item' or current == 'song_item_ajax' %}
+        <a href="{{ song.cover_url }}">
+      {% endif %}
+      <img src="{{ song.cover_url }}" alt="{{ song }}" class="img-responsive song-cover" />
+      {% if current == 'song_item' or current == 'song_item_ajax' %}
+        </a>
+      {% endif %}
     {% else %}
       <img src="/static/img/empty_song.png" alt="{{ song }}" class="img-responsive">
     {% endif %}
