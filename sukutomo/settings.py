@@ -46,7 +46,7 @@ USER_COLORS = [
 # todo
 # SITE_LOGO = Path of the image displayed on the homepage.	value of SITE_IMAGE
 # FAVORITE_CHARACTERS = django_settings.FAVORITE_CHARACTERS
-FAVORITE_CHARACTER_NAME = _('{nth} Favorite Character')
+FAVORITE_CHARACTER_NAME = _('Idol')
 FAVORITE_CHARACTER_TO_URL = lambda link: '/idol/{pk}/{name}/'.format(pk=link.raw_value, name=tourldash(link.value))
 # LATEST_NEWS = django_settings.LATEST_NEWS
 # ABOUT_PHOTO

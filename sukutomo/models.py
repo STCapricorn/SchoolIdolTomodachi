@@ -224,10 +224,10 @@ class Idol(MagiModel):
     HOBBIESS_CHOICES = ALL_ALT_LANGUAGES
     d_hobbiess = models.TextField(null=True)
 
-    favorite_food = models.CharField(_('Favorite food'), max_length=100, null=True)
+    favorite_food = models.CharField(_('Liked food'), max_length=100, null=True)
 
     FAVORITE_FOODS_CHOICES = ALL_ALT_LANGUAGES
-    d_favorite_foods = models.TextField(_('Favorite food'), null=True)
+    d_favorite_foods = models.TextField(_('Disliked food'), null=True)
 
     least_favorite_food = models.CharField(_('Least favorite food'), max_length=100, null=True)
 
