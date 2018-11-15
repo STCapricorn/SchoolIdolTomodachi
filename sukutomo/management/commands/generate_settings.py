@@ -12,6 +12,9 @@ from sukutomo import models
 
 def generate_settings():
 
+    print 'Get Staff Configurations'
+    staff_configurations, latest_news = getStaffConfigurations()
+
     print 'Get Idols'
     favorite_idols = [(
         idol.pk,
@@ -19,26 +22,12 @@ def generate_settings():
         idol.image_url,
     ) for idol in models.Idol.objects.all().order_by('-i_school')]
 
-    print 'Get Max Stats'
-    stats = {
-        'smile_max_idol': None,
-        'pure_max_idol': None,
-        'cool_max_idol': None,
-    }
-    try:
-        for stat in stats.keys():
-            max_stats = models.Card.objects.all().extra(select={
-            }).order_by('-' + stat)[0]
-            stats[stat] = getattr(max_stats, stat)
-    except IndexError:
-        pass
-
     print 'Save generated settings'
     s = u'\
 # -*- coding: utf-8 -*-\n\
 import datetime\n\
+STAFF_CONFIGURATIONS = ' + unicode(staff_configurations) + u'\n\
 FAVORITE_CHARACTERS = ' + unicode(favorite_idols) + u'\n\
-MAX_STATS = ' + unicode(stats) + u'\n\
 '
     print s
     with open(django_settings.BASE_DIR + '/' + django_settings.SITE + '_project/generated_settings.py', 'w') as f:

@@ -46,6 +46,8 @@ USER_COLORS = [
 
 SITE_NAV_LOGO = 'SchoolIdolTomodachi.png'
 
+STAFF_CONFIGURATIONS = django_settings.STAFF_CONFIGURATIONS
+
 # todo
 # SITE_LOGO = Path of the image displayed on the homepage.	value of SITE_IMAGE
 FAVORITE_CHARACTERS = django_settings.FAVORITE_CHARACTERS
@@ -73,15 +75,6 @@ ENABLED_PAGES['twitter'] = {
     'redirect': 'https://twitter.com/schoolidolu',
     'new_tab': True,
     'divider_before': True,
-}
-
-ENABLED_PAGES['skills'] = {
-    'title': _('Skills'),
-    'staff_required': True,
-    'permissions_required': ['manage_main_items'],
-    'icon': 'sparkle',
-    'navbar_link_list': 'staff',
-    'redirect': '/skills',
 }
 
 ENABLED_NAVBAR_LISTS = DEFAULT_ENABLED_NAVBAR_LISTS
