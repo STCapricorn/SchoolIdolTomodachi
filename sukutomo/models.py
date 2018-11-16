@@ -124,10 +124,10 @@ ALL_ALT_LANGUAGES = [ l for l in django_settings.LANGUAGES if l[0] != 'en' ]
 
 class Idol(MagiModel):
     collection_name = 'idol'
-
     owner = models.ForeignKey(User, related_name='added_idols')
+    
     name = models.CharField(_('Name'), max_length=100, unique=True)
-
+    japanese_name = models.CharField(string_concat(_('Name'), ' (', t['Japanese'], ')'), max_length=100, null=True)
     NAMES_CHOICES = LANGUAGES_NEED_OWN_NAME
     d_names = models.TextField(null=True)
 
@@ -140,7 +140,6 @@ class Idol(MagiModel):
     def __unicode__(self):
         return self.t_name
 
-    japanese_name = models.CharField(string_concat(_('Name'), ' (', t['Japanese'], ')'), max_length=100, null=True)
     image = models.ImageField(_('Image'), upload_to=uploadItem('i'), null=True)
 
     ATTRIBUTE_CHOICES = (
@@ -149,10 +148,11 @@ class Idol(MagiModel):
         ('cool', _('Cool')),
         ('all', _('All')),
     )
-
     i_attribute = models.PositiveIntegerField(_('Attribute'), choices=i_choices(ATTRIBUTE_CHOICES), null=True)
+
     @property
-    def attribute_image_url(self): return staticImageURL(self.i_attribute, folder='i_attribute', extension='png')
+    def attribute_image_url(self):
+        return staticImageURL(self.i_attribute, folder='i_attribute', extension='png')
 
     UNIT_CHOICES = (
         u'μ\'s',
@@ -213,8 +213,10 @@ class Idol(MagiModel):
         ('taurus', _('Taurus')),
     )
     i_astrological_sign = models.PositiveIntegerField(_('Astrological sign'), choices=i_choices(ASTROLOGICAL_SIGN_CHOICES), null=True)
+
     @property
-    def astrological_sign_image_url(self): return staticImageURL(self.i_astrological_sign, folder='i_astrological_sign', extension='png')
+    def astrological_sign_image_url(self):
+        return staticImageURL(self.i_astrological_sign, folder='i_astrological_sign', extension='png')
 
     BLOOD_CHOICES = (
         'O',
