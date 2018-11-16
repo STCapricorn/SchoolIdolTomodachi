@@ -9,7 +9,7 @@ from magi.item_model import getInfoFromChoices
 from magi.magicollections import MagiCollection, AccountCollection as _AccountCollection, PrizeCollection as _PrizeCollection, StaffConfigurationCollection as _StaffConfigurationCollection
 from magi.utils import staticImageURL, CuteFormType, CuteFormTransform, custom_item_template, toCountDown, torfc2822, setSubField, jsv, FAVORITE_CHARACTERS_IMAGES
 from sukutomo import forms, models
-from sukutomo.utils import generateDifficulty
+from sukutomo.utils import generateDifficulty, subUnitMergeCuteForm
 
 ############################################################
 # Prize Collection
@@ -332,13 +332,35 @@ class EventCollection(MagiCollection):
 
 SONG_FIELDS_PER_DIFFICULTY = ['notes', 'difficulty']
 
-SONGS_ICONS = {
+SONG_ICONS = {
     'title': 'id', 'romaji':' id', 'versions': 'world', 'locations': 'world',
     'unlock': 'unlock', 'daily': 'trade', 'b_side_start': 'date',
     'b_side_end': 'date', 'release': 'date', 'itunes_id': 'play',
     'length': 'times','bpm': 'hp', 'master_swipe': 'index',
     'b-side': 'times',
 }
+
+SONG_CUTEFORM = {
+    'i_attribute': {
+    },
+    'i_unit': {
+    },
+    'i_subunit': {
+    },
+    'version': {
+        'to_cuteform': lambda k, v: SongCollection._version_images[k],
+        'image_folder': 'language',
+        'transform': CuteFormTransform.ImagePath,
+    },
+    'available': {
+        'type': CuteFormType.YesNo,
+    },
+    'location': {
+        'transform': CuteFormTransform.Flaticon,
+        'to_cuteform': lambda k, v: SongCollection._location_to_cuteform[k],
+    },
+}
+subUnitMergeCuteForm(SONG_CUTEFORM)
 
 class SongCollection(MagiCollection):
     queryset = models.Song.objects.all()
@@ -348,6 +370,7 @@ class SongCollection(MagiCollection):
     form_class = forms.SongForm
     reportable = False
     blockable = False
+    filter_cuteform = SONG_CUTEFORM
     translated_fields = ('title', )
     icon = 'song'
     navbar_link_list = 'lovelive'
@@ -360,41 +383,9 @@ class SongCollection(MagiCollection):
         'bside': 'hourglass',
     }
 
-    filter_cuteform = {
-        'i_attribute': {
-        },
-        'i_unit': {
-        },
-        'i_subunit': {
-        },
-        'version': {
-            'to_cuteform': lambda k, v: SongCollection._version_images[k],
-            'image_folder': 'language',
-            'transform': CuteFormTransform.ImagePath,
-        },
-        'available': {
-            'type': CuteFormType.YesNo,
-        },
-        'location': {
-            'transform': CuteFormTransform.Flaticon,
-            'to_cuteform': lambda k, v: SongCollection._location_to_cuteform[k],
-        },
-        'sub_unit': {
-            'to_cuteform': lambda k, v: (
-                staticImageURL(k, folder='i_unit', extension='png') if float(k) - 2 < 0 else
-                staticImageURL(int(k) - 2, folder='i_subunit', extension='png')
-                ),
-            'title': _('Unit'),
-            'extra_settings': {
-                'modal': 'true',
-                'modal-text': 'true',
-            },
-        }, 
-    }
-
     def to_fields(self, view, item, *args, **kwargs):
 
-        fields = super(SongCollection, self).to_fields(view, item, *args, icons=SONGS_ICONS,  images={
+        fields = super(SongCollection, self).to_fields(view, item, *args, icons=SONG_ICONS,  images={
                 'attribute': staticImageURL(item.i_attribute, folder='i_attribute', extension='png'),
                 'unit': staticImageURL(item.i_unit, folder='i_unit', extension='png'),
                 'subunit': staticImageURL(item.i_subunit, folder='i_subunit', extension='png'),
@@ -433,10 +424,9 @@ class SongCollection(MagiCollection):
             if status and status != 'ended':
                 start_date = getattr(item, 'b_side_start')
                 end_date = getattr(item, 'b_side_end')
-                verbose = string_concat(_('B-Side'), '  (MASTER)') if item.b_side_master is True else _('B-Side')
                 extra_fields += [
                     ('b_side_countdown', {
-                        'verbose_name': verbose,
+                        'verbose_name': _('B-Side'),
                         'value': mark_safe(toCountDown(
                             date=end_date if status == 'current' else start_date,
                             sentence=_('{time} left') if status == 'current' else _('Starts in {time}'),
@@ -490,11 +480,13 @@ class SongCollection(MagiCollection):
                 setSubField(fields, 'title', key='title', value=item.title)
                 setSubField(fields, 'title', key='value', value=item.romaji)
 
+            if item.b_side_master is True:
+                setSubField(fields, 'b_side_countdown', key='verbose_name_subtitle', value='MASTER')
             setSubField(fields, 'b_side_start', key='verbose_name', value=_('Beginning'))
             setSubField(fields, 'b_side_end', key='verbose_name', value=_('End'))
 
             setSubField(fields, 'unlock', key='type', value='text')
-            setSubField(fields, 'unlock', key='value', value=u'Rank {}'.format(item.unlock))
+            setSubField(fields, 'unlock', key='value', value=_('Rank {}').format(item.unlock))
 
             if difficulty is 'master' and item.master_swipe is True:
                 setSubField(fields, 'master', key='verbose_name_subtitle', value=_('with SWIPE notes'))
@@ -505,6 +497,7 @@ class SongCollection(MagiCollection):
         if 'js_variables' not in context:
             context['js_variables'] = {}
         context['js_variables']['version_prefixes'] = jsv(self._version_prefixes)
+        context['js_variables']['locations_related'] = jsv(models.Song.LOCATIONS_RELATED)
         
     class ListView(MagiCollection.ListView):
         filter_form = forms.SongFilterForm

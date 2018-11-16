@@ -235,8 +235,9 @@ class SongFilterForm(MagiFiltersForm):
         ('master_notes', string_concat('MASTER - ', _('Notes'))),
     ]
 
-    sub_unit = SUB_UNIT_CHOICE_FIELD
-    sub_unit_filter = MagiFilter(to_queryset=sub_unit_to_queryset())
+    merge_fields = {
+        'sub_unit': ['i_unit', 'i_subunit'],
+    }
 
     location = forms.forms.ChoiceField(label=_('Location'), choices=BLANK_CHOICE_DASH + models.Song.LOCATIONS_CHOICES)
     location_filter = MagiFilter(to_queryset=lambda form, queryset, request, value: queryset.filter(c_locations__contains=value))
@@ -260,7 +261,8 @@ class SongFilterForm(MagiFiltersForm):
         super(SongFilterForm, self).__init__(*args, **kwargs)
         if 'version' in self.fields:
             self.fields['version'].choices = [(name, verbose) for name, verbose in self.fields['version'].choices if name not in ['KR', 'TW']]
+        self.reorder_fields(['search', 'sub_unit', 'i_attribute', 'location', 'version', 'available'])
             
     class Meta:
         model = models.Song
-        fields = ('search', 'sub_unit', 'i_attribute', 'location', 'version', 'available')
+        fields = ('search', 'i_attribute', 'location', 'version', 'available')

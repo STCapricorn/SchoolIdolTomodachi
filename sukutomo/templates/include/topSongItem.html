@@ -1,4 +1,4 @@
-﻿{% with song=item %}
+{% with song=item %}
 <div class="row">
   <div class="col-md-5">
     {% if song.cover %}
@@ -23,15 +23,20 @@
        {% elif song.unit %}
          <img src="/static/img/i_unit/{{ song.i_unit }}.png" class="under-top">
        {% endif %}
-      <br />
-      <h2 class="song-margin">
-        {{ song.t_title }}
-        {% if song.romaji %}
+    <br />
+    <h2 class="song-margin">
+      {{ song.japanese_title }}
+      {% if song.romaji and song.romaji != song.japanese_title  %}
         <h3 class="under-top-row">
           {{ song.romaji }}
         </h3>
-        {% endif %}
-      </h1>
+      {% endif %}
+      {% if song.t_title != song.japanese_title and song.t_title != song.romaji %}
+        <h4 class="under-top-row">
+          {{ song.t_title }}
+        </h4>
+      {% endif %}
+    </h2>
     </div>
   </div>
 </div>

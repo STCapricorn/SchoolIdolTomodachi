@@ -255,6 +255,8 @@ class Idol(MagiModel):
 ############################################################
 # Songs
 
+ALL_ALT_LANGUAGES_EXCEPT_JP = [ l for l in django_settings.LANGUAGES if l[0] not in ['en', 'jp'] ]
+
 class Song(MagiModel):
     collection_name = 'song'
     owner = models.ForeignKey(User, related_name='added_songs', null=True)
@@ -271,15 +273,23 @@ class Song(MagiModel):
         ('expert', 'EXPERT'),
         ('master', 'MASTER'),
     )
-
-    title = models.CharField(_('Title'), max_length=100)
-    TITLES_CHOICES = ALL_ALT_LANGUAGES
+    
+    title = models.CharField(_('Title'), max_length=100, null=True)
+    japanese_title = models.CharField(string_concat(_('Title'), ' (', t['Japanese'], ')'), max_length=100)
+    TITLES_CHOICES = ALL_ALT_LANGUAGES_EXCEPT_JP
     d_titles = models.TextField(null=True)
 
-    def __unicode__(self):
-        return self.t_title
+    @property
+    def t_title(self):
+        return self.titles.get(get_language(), self.japanese_title) if get_language() != 'en' else self.title
 
-    romaji = models.CharField(string_concat(_('Title'), ' (', _('Romaji'), ')'), max_length=100, null=True)
+    def __unicode__(self):
+        if get_language() not in ['ja', 'zh-hans', 'zh-hant', 'kr', 'ru'] and self.romaji not in [self.japanese_title, None]:
+            return unicode(string_concat(self.japanese_title, ' (', self.romaji, ')'))
+        return unicode(self.japanese_title) if self.t_title in [self.japanese_title, None] else unicode(
+            string_concat(self.japanese_title, ' (', self.t_title, ')'))
+
+    japanese_romaji = models.CharField(string_concat(_('Title'), ' (', _('Romaji'), ')'), max_length=100, null=True)
     cover = models.ImageField(_('Song Cover'), upload_to=uploadItem('s'), null=True)
 
     ATTRIBUTE_CHOICES = (
@@ -298,12 +308,23 @@ class Song(MagiModel):
     VERSIONS_CHOICES = Account.VERSION_CHOICES
     c_versions = models.TextField(_('Server availability'), blank=True, null=True, default='"JP"')
 
-    LOCATIONS_CHOICES = [
-        ('hits', _('Hits')),
-        ('daily', _('Daily rotation')),
-        ('bside', _('B-Side')),
-    ]
-    c_locations = models.TextField(_('Locations'), blank=True, null=True)
+    LOCATIONS = OrderedDict((
+        ('hits', {
+            'translation': _('Hits'),
+            'related': ['unlock'],
+        }),
+        ('daily', {
+            'translation': _('Daily'),
+            'related': ['daily'],
+        }),
+        ('bside', {
+            'translation': _('B-Side'),
+            'related': ['b_side_master', 'b_side_start', 'b_side_end'],
+        })
+    ))
+    LOCATIONS_CHOICES = [(_name, _info['translation']) for _name, _info in LOCATIONS.items()]
+    LOCATIONS_RELATED = [(_name, _info['related']) for _name, _info in LOCATIONS.items()]
+    c_locations = models.TextField(_('Location'), blank=True, null=True)
 
     unlock = models.PositiveIntegerField(_('Unlock'), help_text='Will be displayed as "Rank __"', null=True)
     daily = models.CharField(_('Daily rotation'), max_length = 100, null=True)
