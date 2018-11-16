@@ -4,16 +4,16 @@ import datetime, time
 from collections import OrderedDict
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.contrib.auth.models import User
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _, string_concat, get_language
 from django.db import models
 from django.utils import timezone
 from django.conf import settings as django_settings
-from magi.utils import PastOnlyValidator, staticImageURL, ordinalNumber, ColorField
 from magi.abstract_models import BaseAccount
 from magi.item_model import MagiModel, i_choices, getInfoFromChoices
 from magi.models import uploadItem
+from magi.utils import PastOnlyValidator, staticImageURL, ordinalNumber, ColorField
 from sukutomo.django_translated import t
-from django.utils.safestring import mark_safe
 
 LANGUAGES_TO_VERSIONS = {
     'en': 'EN',

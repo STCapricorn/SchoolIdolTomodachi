@@ -1,17 +1,17 @@
 import datetime
-from magi import forms
 from django.conf import settings as django_settings
 from django.core.validators import MinValueValidator
 from django.db.models import Q
 from django.db.models.fields import BLANK_CHOICE_DASH
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _, string_concat
+from magi import forms
+from magi.forms import AutoForm, MagiFiltersForm, MagiFilter
 from magi.item_model import i_choices
 from magi.utils import PastOnlyValidator
-from magi.forms import AutoForm, MagiFiltersForm, MagiFilter
 from sukutomo import models
 from sukutomo.django_translated import t
-from django.utils.safestring import mark_safe
 
 ############################################################
 # Form utils
