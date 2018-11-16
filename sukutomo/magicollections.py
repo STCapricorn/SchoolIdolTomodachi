@@ -333,7 +333,7 @@ class EventCollection(MagiCollection):
 SONG_FIELDS_PER_DIFFICULTY = ['notes', 'difficulty']
 
 SONG_ICONS = {
-    'title': 'id', 'romaji':' id', 'versions': 'world', 'locations': 'world',
+    'title': 'song', 'romaji':' song', 'versions': 'world', 'locations': 'world',
     'unlock': 'unlock', 'daily': 'trade', 'b_side_start': 'date',
     'b_side_end': 'date', 'release': 'date', 'itunes_id': 'play',
     'length': 'times','bpm': 'hp', 'master_swipe': 'index',
@@ -395,6 +395,11 @@ class SongCollection(MagiCollection):
         setSubField(fields, 'b_side_end', key='timezones', value=['Asia/Tokyo', 'Local time'])
         setSubField(fields, 'release', key='timezones', value=['Asia/Tokyo', 'Local time'])
         setSubField(fields, 'length', key='value', value=lambda f: item.length_in_minutes)
+        for _difficulty, tl in models.Song.DIFFICULTIES:
+            setSubField(fields, '{}_notes'.format(_difficulty), key='icon', value='combo')
+            setSubField(fields, '{}_rating'.format(_difficulty), key='image', value=staticImageURL(
+                getattr(item, '{}_rating'.format(_difficulty)) if 0<getattr(item, '{}_rating'.format(_difficulty))<14 else 0,
+                folder='stars', extension='png'))
 
         return fields
 
@@ -451,7 +456,7 @@ class SongCollection(MagiCollection):
 
             #Difficulty info
             for difficulty, d_verbose in models.Song.DIFFICULTIES:
-                rating = getattr(item, u'{}_difficulty'.format(difficulty))
+                rating = getattr(item, u'{}_rating'.format(difficulty))
                 notes = getattr(item, u'{}_notes'.format(difficulty))
                 if rating != None or notes != None:
                     extra_fields.append((difficulty, {
@@ -462,7 +467,7 @@ class SongCollection(MagiCollection):
                         'value': mark_safe(generateDifficulty(rating, notes)),
                     }))
                 exclude_fields.append(difficulty)
-                exclude_fields.append(u'{}_difficulty'.format(difficulty))
+                exclude_fields.append(u'{}_rating'.format(difficulty))
                 exclude_fields.append(u'{}_notes'.format(difficulty))
 
             exclude_fields+=['title', 'romaji', 'cover', 'i_attribute', 'i_unit', 'i_subunit',
@@ -474,11 +479,6 @@ class SongCollection(MagiCollection):
 
             fields = super(SongCollection.ItemView, self).to_fields(
                 item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)
-
-            if item.romaji and item.romaji != item.title:
-                setSubField(fields, 'title', key='type', value='title_text')
-                setSubField(fields, 'title', key='title', value=item.title)
-                setSubField(fields, 'title', key='value', value=item.romaji)
 
             if item.b_side_master is True:
                 setSubField(fields, 'b_side_countdown', key='verbose_name_subtitle', value='MASTER')
@@ -528,3 +528,7 @@ class SongCollection(MagiCollection):
         def extra_context(self, context):
             super(SongCollection.EditView, self).extra_context(context)
             self.collection._modification_extra_context(context)
+
+        def to_translate_form_class(self):
+            super(SongCollection.EditView, self).to_translate_form_class()
+            self._translate_form_class = forms.to_translate_song_form_class(self._translate_form_class)

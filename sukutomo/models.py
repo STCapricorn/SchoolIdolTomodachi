@@ -13,6 +13,7 @@ from magi.abstract_models import BaseAccount
 from magi.item_model import MagiModel, i_choices, getInfoFromChoices
 from magi.models import uploadItem
 from sukutomo.django_translated import t
+from django.utils.safestring import mark_safe
 
 LANGUAGES_TO_VERSIONS = {
     'en': 'EN',
@@ -261,7 +262,7 @@ class Song(MagiModel):
     collection_name = 'song'
     owner = models.ForeignKey(User, related_name='added_songs', null=True)
 
-    DIFFICULTY_VALIDATORS = [
+    RATING_VALIDATORS = [
         MinValueValidator(1),
         MaxValueValidator(15),
     ]
@@ -278,6 +279,7 @@ class Song(MagiModel):
     japanese_title = models.CharField(string_concat(_('Title'), ' (', t['Japanese'], ')'), max_length=100)
     TITLES_CHOICES = ALL_ALT_LANGUAGES_EXCEPT_JP
     d_titles = models.TextField(null=True)
+    romaji = models.CharField(string_concat(_('Title'), ' (', _('Romaji'), ')'), max_length=100, null=True)
 
     @property
     def t_title(self):
@@ -289,7 +291,6 @@ class Song(MagiModel):
         return unicode(self.japanese_title) if self.t_title in [self.japanese_title, None] else unicode(
             string_concat(self.japanese_title, ' (', self.t_title, ')'))
 
-    japanese_romaji = models.CharField(string_concat(_('Title'), ' (', _('Romaji'), ')'), max_length=100, null=True)
     cover = models.ImageField(_('Song Cover'), upload_to=uploadItem('s'), null=True)
 
     ATTRIBUTE_CHOICES = (
@@ -351,16 +352,16 @@ class Song(MagiModel):
     lyricist = models.CharField(_('Lyricist'), max_length=100, null=True)
     arranger = models.CharField(_('Arranger'), max_length=100, null=True)
 
-    easy_notes = models.PositiveIntegerField(string_concat('EASY', ' - ', _('Notes')), null=True)
-    easy_difficulty = models.PositiveIntegerField(string_concat('EASY', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
-    normal_notes = models.PositiveIntegerField(string_concat('NORMAL', ' - ', _('Notes')), null=True)
-    normal_difficulty = models.PositiveIntegerField(string_concat('NORMAL', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
-    hard_notes = models.PositiveIntegerField(string_concat('HARD', ' - ', _('Notes')), null=True)
-    hard_difficulty = models.PositiveIntegerField(string_concat('HARD', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
-    expert_notes = models.PositiveIntegerField(string_concat('EXPERT', ' - ', _('Notes')), null=True)
-    expert_difficulty = models.PositiveIntegerField(string_concat('EXPERT', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
-    master_notes = models.PositiveIntegerField(string_concat('MASTER', ' - ', _('Notes')), null=True)
-    master_difficulty = models.PositiveIntegerField(string_concat('MASTER', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
+    easy_notes = models.PositiveIntegerField(_('{} notes').format('EASY'), null=True)
+    easy_rating = models.PositiveIntegerField(mark_safe(_('{} &#9734 rating').format('EASY')), validators=RATING_VALIDATORS, null=True)
+    normal_notes = models.PositiveIntegerField(_('{} notes').format('NORMAL'), null=True)
+    normal_rating = models.PositiveIntegerField(mark_safe(_('{} &#9734 rating').format('NORMAL')), validators=RATING_VALIDATORS, null=True)
+    hard_notes = models.PositiveIntegerField(_('{} notes').format('HARD'), null=True)
+    hard_rating = models.PositiveIntegerField(mark_safe(_('{} &#9734 rating').format('HARD')), validators=RATING_VALIDATORS, null=True)
+    expert_notes = models.PositiveIntegerField(_('{} notes').format('EXPERT'), null=True)
+    expert_rating = models.PositiveIntegerField(mark_safe(_('{} &#9734 rating').format('EXPERT')), validators=RATING_VALIDATORS, null=True)
+    master_notes = models.PositiveIntegerField(_('{} notes').format('MASTER'), null=True)
+    master_rating = models.PositiveIntegerField(mark_safe(_('{} &#9734 rating').format('MASTER')), validators=RATING_VALIDATORS, null=True)
     master_swipe = models.BooleanField(_('with SWIPE notes'), default=False)
 
     DATE_TIMES = {

@@ -11,6 +11,7 @@ from magi.utils import PastOnlyValidator
 from magi.forms import AutoForm, MagiFiltersForm, MagiFilter
 from sukutomo import models
 from sukutomo.django_translated import t
+from django.utils.safestring import mark_safe
 
 ############################################################
 # Form utils
@@ -220,19 +221,26 @@ class SongForm(AutoForm):
         save_owner_on_creation = True
         fields = '__all__'
 
+def to_translate_song_form_class(cls):
+    class _TranslateSongForm(cls):
+        class Meta(cls.Meta):
+            fields = ['romaji'] + cls.Meta.fields
+    return _TranslateSongForm
+
 class SongFilterForm(MagiFiltersForm):
-    search_fields = ['title', 'd_titles', 'unlock', 'daily'] + dict(models.Song.SONGWRITERS).keys()
+    search_fields = ['title', 'japanese_title', 'd_titles', 'romaji', 'unlock'] + dict(models.Song.SONGWRITERS).keys()
 
     ordering_fields = [
         ('release', _('Release date')),
         ('title', _('Title')),
+        ('japanese_title', string_concat(_('Title'), ' (', _('Japanese'), ')')),
         ('romaji', string_concat(_('Title'), ' (', _('Romaji'), ')')),
         ('length', _('Length')),
         ('bpm', _('Beats per minute')),
-        ('expert_difficulty', string_concat('EXPERT - ', _('Difficulty'))),
-        ('expert_notes', string_concat('EXPERT - ', _('Notes'))),
-        ('master_difficulty', string_concat('MASTER - ', _('Difficulty'))),
-        ('master_notes', string_concat('MASTER - ', _('Notes'))),
+        ('expert_rating', mark_safe(_('{} &#9734 rating').format('EXPERT'))),
+        ('expert_notes', _('{} notes').format('EXPERT')),
+        ('master_rating', mark_safe(_('{} &#9734 rating').format('MASTER'))),
+        ('master_notes', _('{} notes').format('MASTER')),
     ]
 
     merge_fields = {
