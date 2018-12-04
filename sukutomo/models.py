@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-import datetime
+import datetime, time
 from collections import OrderedDict
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _, string_concat, get_language
 from django.db import models
@@ -42,7 +42,7 @@ class Account(BaseAccount):
     # Details
 
 
-    VERSION_CHOICES = [(name, info['translation']) for name, info in VERSIONS.items()]
+    VERSION_CHOICES = [(_name, _info['translation']) for _name, _info in VERSIONS.items()]
     i_version = models.PositiveIntegerField(_('Version'), choices=i_choices(VERSION_CHOICES), default=1)
     version_image = property(getInfoFromChoices('version', VERSIONS, 'image'))
 
@@ -87,8 +87,8 @@ class Account(BaseAccount):
     i_play_with = models.PositiveIntegerField(_('Play with'), choices=i_choices(PLAY_WITH_CHOICES), null=True)
 
     OS_CHOICES = (
-        'Android',
-        'iOs',
+        'android',
+        'ios',
     )
     i_os = models.PositiveIntegerField(_('Operating System'), choices=i_choices(OS_CHOICES), null=True)
 
@@ -190,6 +190,7 @@ class Idol(MagiModel):
         ('shion', _('Shion Girls\' Academy')),
         ('touou', _('Touou Academy')),
         ('yg', _('Y.G. International Academy')),
+        ('hakodate', _('Hakodate Seisen Girls\' Academy')),
         ('utx', _('UTX High School')),
     ]
 
@@ -313,6 +314,372 @@ class VoiceActress(MagiModel):
     }
 
 ############################################################
+# Songs
+
+class Song(MagiModel):
+    collection_name = 'song'
+    owner = models.ForeignKey(User, related_name='added_songs', null=True)
+
+    DIFFICULTY_VALIDATORS = [
+        MinValueValidator(1),
+        MaxValueValidator(12),
+    ]
+
+    DIFFICULTIES = (
+        ('easy', 'EASY'),
+        ('normal', 'NORMAL'),
+        ('hard', 'HARD'),
+        ('expert', 'EXPERT'),
+        ('master', 'MASTER'),
+    )
+
+    SONGWRITERS_DETAILS = [
+        ('composer', _('Composer')),
+        ('lyricist', _('Lyricist')),
+        ('arranger', _('Arranger')),
+    ]
+
+    title = models.CharField(_('Title'), max_length=100)
+    TITLES_CHOICES = ALL_ALT_LANGUAGES
+    d_titles = models.TextField(null=True)
+
+    def __unicode__(self):
+        return self.t_title
+
+    romaji = models.CharField(string_concat(_('Title'), ' (', _('Romaji'), ')'), max_length=100, null=True)
+    cover = models.ImageField(_('Song Cover'), upload_to=uploadItem('s'), null=True)
+
+    ATTRIBUTE_CHOICES = (
+        ('smile', _('Smile')),
+        ('pure', _('Pure')),
+        ('cool', _('Cool')),
+    )
+    i_attribute = models.PositiveIntegerField(_('Attribute'), choices=i_choices(ATTRIBUTE_CHOICES), null=True)
+
+    UNIT_CHOICES = Idol.UNIT_CHOICES
+    i_unit = models.PositiveIntegerField(_('Unit'), choices=i_choices(UNIT_CHOICES), null=True)
+    
+    SUBUNIT_CHOICES = Idol.SUBUNIT_CHOICES
+    i_subunit = models.PositiveIntegerField(_('Subunit'), choices=i_choices(SUBUNIT_CHOICES), null=True)
+
+    VERSIONS_CHOICES = Account.VERSION_CHOICES
+    c_versions = models.TextField(_('Server availability'), blank=True, null=True, default='"JP"')
+
+    LOCATIONS_CHOICES = [
+        ('hits', _('Hits')),
+        ('daily', _('Daily rotation')),
+        ('bside', _('B-Side')),
+    ]
+    c_locations = models.TextField(_('Locations'), blank=True, null=True)
+
+    unlock = models.PositiveIntegerField(_('Unlock'), help_text=_('Will be displayed as "Rank __"'), null=True)
+    daily = models.CharField(_('Daily rotation'), max_length = 100, null=True)
+    b_side_master = models.BooleanField(_('MASTER'), default=False)
+    b_side_start = models.DateTimeField(string_concat(_('B-Side'), ' - ', _('Beginning')), null=True)
+    b_side_end = models.DateTimeField(string_concat(_('B-Side'), ' - ', _('End')), null=True)
+
+    release = models.DateTimeField(_('Release date'), null=True)  
+    itunes_id = models.PositiveIntegerField(_('Preview'), help_text='iTunes ID', null=True)
+    length = models.PositiveIntegerField(_('Length'), help_text=_('in seconds'), null=True)
+    bpm = models.PositiveIntegerField(_('Beats per minute'), null=True)
+
+    @property
+    def length_in_minutes(self):
+        return time.strftime('%M:%S', time.gmtime(self.length))
+
+    SONGWRITERS = (
+        ('composer', _('Composer')),
+        ('lyricist', _('Lyricist')),
+        ('arranger', _('Arranger')),
+    )
+
+    composer = models.CharField(_('Composer'), max_length=100, null=True)
+    lyricist = models.CharField(_('Lyricist'), max_length=100, null=True)
+    arranger = models.CharField(_('Arranger'), max_length=100, null=True)
+
+    easy_notes = models.PositiveIntegerField(string_concat('EASY', ' - ', _('Notes')), null=True)
+    easy_difficulty = models.PositiveIntegerField(string_concat('EASY', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
+    normal_notes = models.PositiveIntegerField(string_concat('NORMAL', ' - ', _('Notes')), null=True)
+    normal_difficulty = models.PositiveIntegerField(string_concat('NORMAL', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
+    hard_notes = models.PositiveIntegerField(string_concat('HARD', ' - ', _('Notes')), null=True)
+    hard_difficulty = models.PositiveIntegerField(string_concat('HARD', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
+    expert_notes = models.PositiveIntegerField(string_concat('EXPERT', ' - ', _('Notes')), null=True)
+    expert_difficulty = models.PositiveIntegerField(string_concat('EXPERT', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
+    master_notes = models.PositiveIntegerField(string_concat('MASTER', ' - ', _('Notes')), null=True)
+    master_difficulty = models.PositiveIntegerField(string_concat('MASTER', ' - ', _('Difficulty')), validators=DIFFICULTY_VALIDATORS, null=True)
+    master_swipe = models.BooleanField(_('with SWIPE notes'), default=False)
+
+    @property
+    def status(self):
+        start_date = getattr(self, 'b_side_start')
+        end_date = getattr(self, 'b_side_end')
+        if not end_date or not start_date:
+            return None
+        now = timezone.now()
+        if now > end_date:
+            return 'ended'
+        elif now > start_date:
+            return 'current'
+        return 'future'            
+
+    @property
+    def available(self):
+        release_date = getattr(self, 'release')
+        b_side = getattr(self, 'status')
+        if b_side is 'current':
+            return True
+        elif release_date:
+            if timezone.now() >= release_date:
+                return True
+        return False
+
+############################################################
+# Skills
+
+class Skill(MagiModel):
+    collection_name = 'skill'
+    owner = models.ForeignKey(User, related_name='added_skills', null=True)
+
+    def __unicode__(self):
+        return u'{}'.format(self.t_name)
+
+    def card_html(self):
+        return string_concat('<b>', self.t_name, ' <span class="text-muted">(', self.skill_type, ')</span></b>')
+
+    name = models.CharField(_('Name'), max_length=100, unique=True)
+    NAMES_CHOICES = ALL_ALT_LANGUAGES
+    d_names = models.TextField(null=True)
+
+    SKILL_TYPE = (
+        ('score', _('Score Up')),
+        ('pl', _('Timing Boost')),
+        ('heal', _('Recovery')),
+        ('stat', _('Stat Effect')),
+        ('support', _('Support')),
+    )
+    i_skill_type =  models.PositiveIntegerField(_('Skill Type'), choices=i_choices(SKILL_TYPE), null=True)
+
+    details = models.TextField(_('Details'), help_text=_('Optional variables: {rate}, {dependency}, {chance}, {unit}, {subunit}, {year}, {number}, {length}'), null=True)
+    DETAILS_CHOICES = ALL_ALT_LANGUAGES
+    d_detailss = models.TextField(null=True)
+
+############################################################
+# Sets
+
+class Set(MagiModel):
+    collection_name = 'set'
+    owner = models.ForeignKey(User, related_name='added_sets', null=True)
+
+    def __unicode__(self):
+        if self.set_type:
+            set_type = self.set_type
+        else:
+            set_type = '???'
+        if self.unit_type:
+            unit_type = self.unit_type
+        else:
+            unit_type = '???'   
+        return u'{} ({}, {})'.format(self.t_title, set_type, unit_type)
+
+    @property
+    def cards_url(self):
+        return u'/cards/?in_set={}'.format(self.id)
+
+    @property
+    def ajax_cards_url(self):
+        return u'/ajax/cards/?in_set={}'.format(self.id)
+
+    title = models.CharField(_('Title'), max_length=100, unique=True)
+    TITLES_CHOICES = ALL_ALT_LANGUAGES
+    d_titles = models.TextField(null=True)
+
+    SET_TYPES = (
+        ('gacha', _('Gacha')),
+        ('event', _('Event')),
+    )
+    i_set_type =  models.PositiveIntegerField(_('Type'), choices=i_choices(SET_TYPES), null=True)
+
+    UNIT_TYPES = Idol.UNIT_CHOICES
+    i_unit_type = models.PositiveIntegerField(_('Unit'), choices=i_choices(UNIT_TYPES), null=True)
+
+############################################################
+# Cards
+
+class Card(MagiModel):
+    collection_name = 'card'
+    owner = models.ForeignKey(User, related_name='added_cards', null=True)
+
+    def __unicode__(self):
+        rarity = ''
+        idol = ''
+        attribute = ''
+        if self.rarity:
+            rarity=self.rarity
+        if self.idol:
+            idol=self.idol
+        if self.attribute:
+            attribute = self.t_attribute
+        return u'#{} {} {} {}'.format(self.card_id, attribute, rarity, idol)
+
+    card_id = models.PositiveIntegerField(_('ID'), unique=True)
+    idol = models.ForeignKey(Idol, related_name='card_idols', null=True)
+
+    RARITY_CHOICES = (
+        'N',
+        'R',
+        'SR',
+        'SSR',
+        'UR',
+    )
+    i_rarity =  models.PositiveIntegerField(_('Rarity'), choices=i_choices(RARITY_CHOICES), null=True)
+
+    limited = models.BooleanField(_('Limited'), default=False)
+    promo = models.BooleanField(_('Promo'), default=False)
+    support = models.BooleanField(_('Support'), default=False)
+    
+    ATTRIBUTE_CHOICES = Idol.ATTRIBUTE_CHOICES
+    i_attribute = models.PositiveIntegerField(_('Attribute'), choices=i_choices(ATTRIBUTE_CHOICES), null=True)
+
+    VERSIONS_CHOICES = Account.VERSION_CHOICES
+    c_versions = models.TextField(_('Server availability'), blank=True, null=True, default='"JP"')
+
+    release = models.DateTimeField(_('Release date'), null=True)
+
+    name = models.CharField(_('Name'), max_length=100, null=True)
+    NAMES_CHOICES = ALL_ALT_LANGUAGES
+    d_names = models.TextField(null=True)
+    
+    skill = models.ForeignKey(Skill, related_name="added_skills", verbose_name=_('Skill'), null=True)
+    skill_details = property(lambda _s: _s.skill.details)
+    rate = models.PositiveIntegerField(_('Rate of Activation'), null=True)
+
+    DEPENDENCY_CHOICES = (
+        ('notes', _('notes')),
+        ('PERFECTs'),
+        ('time', _('seconds')),
+        ('combo', _('x combo')),
+    )
+    i_dependency = models.PositiveIntegerField(_('Dependency'), choices=i_choices(DEPENDENCY_CHOICES), null=True)
+    
+    chance = models.PositiveIntegerField(_('% Chance'), null=True)
+    number = models.PositiveIntegerField('{number}', null=True)
+    length = models.PositiveIntegerField('{length}', null=True)
+
+    SKILL_REPLACE = (
+        'rate',
+        'dependency',
+        'chance',
+        'number',
+        'length',
+    )
+
+    IDOL_REPLACE = (
+        'unit',
+        'subunit',
+        'year',
+    )
+
+    CENTERS = OrderedDict([
+        ('princess', {
+            'translation': _('Princess'),
+            'focus': 'smile',
+            'on_attribute': _(u'{} pts. up by +9%'),
+            'off_attribute': _(u'{} pts. up by +12% of Smile'),
+        }),
+        ('angel', {
+            'translation': _('Angel'),
+            'focus': 'pure',
+            'on_attribute': _(u'{} pts. up by +9%'),
+            'off_attribute': _(u'{} pts. up by +12% of Pure'),
+        }),
+        ('empress', {
+            'translation': _('Empress'),
+            'focus': 'cool',
+            'on_attribute': _(u'{} pts. up by +9%'),
+            'off_attribute': _(u'{} pts. up by +12% of Cool'),
+        }),
+        ('star', {
+            'translation': _('Star'),
+            'on_attribute': _(u'{} pts. up by 7%'),
+        }),
+        ('heart', {
+            'translation': _('Heart'),
+            'on_attribute': _(u'{} pts. up by +6%'),
+        }),
+        ('energy', {
+            'translation': _('Energy'),
+            'on_attribute': _(u'{} pts. up by +4%'),
+        }),
+        ('power', {
+            'translation': _('Power'),
+            'on_attribute': _(u'{} pts. up by +3%'),
+        }),
+        ])
+            
+    CENTER_CHOICES = [(_name, _info['translation']) for _name, _info in CENTERS.items()]
+    i_center = models.PositiveIntegerField(_('Center Skill'), choices=i_choices(CENTER_CHOICES), null=True)
+    center_focus = property(getInfoFromChoices('center', CENTERS, 'focus'))
+    center_off_attribute = property(getInfoFromChoices('center', CENTERS, 'off_attribute'))
+    center_on_attribute = property(getInfoFromChoices('center', CENTERS, 'on_attribute'))
+
+    OFF_ATTRIBUTE_CENTERS = ['princess', 'angel', 'empress']
+
+    @property
+    def center_details(self):
+        if self.center in self.OFF_ATTRIBUTE_CENTERS and self.attribute != self.center_focus:
+            return self.center_off_attribute 
+        return self.center_on_attribute
+
+    GROUP_BOOST = (
+        ('unit', _('Unit')),
+        ('subunit', _('Subunit')),
+        ('year', _('Year')),
+    )
+    i_group = models.PositiveIntegerField(_('Boost Group'), choices=i_choices(GROUP_BOOST), null=True)
+    boost_percent = models.PositiveIntegerField(_('Boost Percentage'), null=True)
+
+    image = models.ImageField(_('Image'), upload_to=uploadItem('c'), null=True)
+    image_idol = models.ImageField(string_concat(_('Image'), ' (', _('Idolized'), ')'), upload_to=uploadItem('c'), null=True)
+
+    old_image = models.ImageField(string_concat(_('Image'), ' (', _('Old'), ')'), upload_to=uploadItem('c'), null=True)
+    old_image_idol = models.ImageField(string_concat(_('Image'), ' (', _('Old'), ', ', _('Idolized'), ')'), upload_to=uploadItem('c'), null=True)
+
+    icon = models.ImageField(_('Icon'), upload_to=uploadItem('c'), null=True)
+    icon_idol = models.ImageField(string_concat(_('Icon'), ' (', _('Idolized'), ')'), upload_to=uploadItem('c'), null=True)
+
+    old_icon = models.ImageField(string_concat(_('Icon'), ' (', _('Old'), ')'), upload_to=uploadItem('c'), null=True)
+    old_icon_idol = models.ImageField(string_concat(_('Icon'), ' (', _('Old'), ', ', _('Idolized'), ')'), upload_to=uploadItem('c'), null=True)
+
+    transparent = models.ImageField(_('Transparent'), upload_to=uploadItem('c'), null=True)
+    transparent_idol = models.ImageField(string_concat(_('Transparent'), ' (', _('Idolized'), ')'), upload_to=uploadItem('c'), null=True)
+
+    art = models.ImageField(_('Art'), upload_to=uploadItem('c'), null=True)
+    art_idol = models.ImageField(string_concat(_('Art'), ' (', _('Idolized'), ')'), upload_to=uploadItem('ic'), null=True)
+
+    old_art = models.ImageField(string_concat(_('Art'), ' (', _('Old'), ')'), upload_to=uploadItem('c'), null=True)
+    old_art_idol = models.ImageField(string_concat(_('Art'), ' (', _('Old'), ', ', _('Idolized'), ')'), upload_to=uploadItem('ic'), null=True)
+
+    smile_min = models.PositiveIntegerField(string_concat(_('Smile'), ' (', _('Minimum'), ')'), null=True)
+    smile_max = models.PositiveIntegerField(string_concat(_('Smile'), ' (', _('Maximum'), ')'), null=True)
+    smile_max_idol = models.PositiveIntegerField(string_concat(_('Smile'), ' (', _('Idolized'), ', ', _('Maximum'), ')'), null=True)
+
+    pure_min = models.PositiveIntegerField(string_concat(_('Pure'), ' (', _('Minimum'), ')'), null=True)
+    pure_max = models.PositiveIntegerField(string_concat(_('Pure'), ' (', _('Maximum'), ')'), null=True)
+    pure_max_idol = models.PositiveIntegerField(string_concat(_('Pure'), ' (', _('Idolized'), ', ', _('Maximum'), ')'), null=True)
+
+    cool_min = models.PositiveIntegerField(string_concat(_('Cool'), ' (', _('Minimum'), ')'), null=True)
+    cool_max = models.PositiveIntegerField(string_concat(_('Cool'), ' (', _('Maximum'), ')'), null=True)
+    cool_max_idol = models.PositiveIntegerField(string_concat(_('Cool'), ' (', _('Idolized'), ', ', _('Maximum'), ')'), null=True)
+
+    hp = models.PositiveIntegerField(string_concat(_('HP'), ' (', _('Unidolized'), ')'), null=True)
+
+    in_set = models.ForeignKey(Set, related_name="sets", verbose_name=_('Sets'), null=True)
+
+    details = models.TextField(_('Details'), null=True)
+    DETAILSS_CHOICES = ALL_ALT_LANGUAGES
+    d_detailss = models.TextField(null=True)
+    
+############################################################
 # Events
 
 class SIFEvent(MagiModel):
@@ -323,6 +690,9 @@ class SIFEvent(MagiModel):
     TITLES_CHOICES = ALL_ALT_LANGUAGES
     d_titles = models.TextField(null=True)
 
+    def __unicode__(self):
+        return u'{}'.format(self.t_title)
+      
     image = models.ImageField(_('Image'), null=True)
 
     TYPE_CHOICES = (
@@ -340,7 +710,6 @@ class SIFEvent(MagiModel):
         u'μ\'s',
         'Aqours',
     )
-
     i_unit = models.PositiveIntegerField(_('Unit'), choices=i_choices(UNIT_CHOICES), null=True)
 
     VERSIONS_CHOICES = Account.VERSION_CHOICES

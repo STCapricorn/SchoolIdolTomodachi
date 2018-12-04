@@ -4,6 +4,7 @@ from django.utils.translation import ugettext_lazy as _, get_language
 from django.utils.formats import dateformat
 from django.utils.safestring import mark_safe
 from django.utils.translation import string_concat
+from magi.item_model import getInfoFromChoices
 from magi.magicollections import (
     MagiCollection,
     AccountCollection as _AccountCollection,
@@ -75,25 +76,24 @@ class ActivityCollection(_ActivityCollection):
             context['site_description'] = _(u'The {game} Database & Community').format(game=_('Love Live!'))
 
 ############################################################
-############################################################
 # Idols Collection
 
 IDOLS_ICONS = {
     'name': 'id',
     'japanese_name': 'id',
-    'school': 'max-bond',
-    'year': 'scoreup',
+    'school': 'school',
+    'year': 'education',
     'age': 'scoreup',
-    'birthday': 'event',
-    'height': 'id',
+    'birthday': 'birthday',
+    'height': 'measurements',
     'blood': 'hp',
-    'bust': 'id',
-    'waist': 'id',
-    'hips': 'id',
-    'hobbies': 'star',
-    'favorite_food': 'heart',
-    'least_favorite_food' : 'heart-empty',
-    'description': 'id',
+    'bust': 'measurements',
+    'waist': 'measurements',
+    'hips': 'measurements',
+    'hobbies': 'hobbies',
+    'favorite_food': 'food-like',
+    'least_favorite_food' : 'food-dislike',
+    'description': 'author',
 }
 
 IDOLS_CUTEFORM = {
@@ -171,7 +171,7 @@ class IdolCollection(MagiCollection):
                     'verbose_name': _('Measurements'),
                     'type': 'list',
                     'value': values,
-                    'icon': 'scoreup',
+                    'icon': 'measurements',
                     }))
             if item.school is not None:
                 exclude_fields.append('i_year')
@@ -240,6 +240,7 @@ class IdolCollection(MagiCollection):
     class EditView(MagiCollection.EditView):
         staff_required = True
         permissions_required = ['manage_main_items']
+        allow_delete = True
 
 ############################################################
 # SIFEvents Collection
@@ -330,12 +331,13 @@ class SIFEventCollection(MagiCollection):
                                 date=torfc2822(end_date if status == 'current' else start_date),
                                 sentence=_('{time} left') if status == 'current' else _('Starts in {time}'),
                             ),
-                            'icon': 'times',
+                            'icon': 'hourglass',
                             'type': 'html',
                         }),
             ]
             exclude_fields.append('start_date')
             exclude_fields.append('end_date')
+            
             order = EVENT_ITEM_FIELDS_ORDER + order
             fields = super(SIFEventCollection.ItemView, self).to_fields(
                 item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)
@@ -366,7 +368,380 @@ class SIFEventCollection(MagiCollection):
         staff_required = True
         permissions_required = ['manage_main_items']
         ajax_callback = 'loadVersions'
+        allow_delete = True
 
         def extra_context(self, context):
             super(SIFEventCollection.EditView, self).extra_context(context)
             self.collection._modification_extra_context(context)
+
+############################################################
+# Songs Collection
+
+SONG_FIELDS_PER_DIFFICULTY = ['notes', 'difficulty']
+
+SONGS_ICONS = {
+    'title': 'id', 'romaji':'id', 'versions':'world', 'locations':'world',
+    'unlock':'unlock', 'daily':'toggler', 'b_side_start': 'date',
+    'b_side_end': 'date', 'release':'date', 'itunes_id':'play',
+    'length':'times','bpm':'hp', 'master_swipe':'index',
+    'hits': 'deck', 'daily': 'trade', 'b-side': 'times',
+}
+
+class SongCollection(MagiCollection):
+    queryset = models.Song.objects.all()
+    title = _('Song')
+    plural_title = _('Songs')
+    multipart = True
+    form_class = forms.SongForm
+    reportable = False
+    blockable = False
+    translated_fields = ('title', )
+    icon = 'song'
+    navbar_link_list = 'lovelive'
+
+    _version_images = { _k: _v['image'] for _k, _v in models.Account.VERSIONS.items() }
+    _version_prefixes = { _k: _v['prefix'] for _k, _v in models.Account.VERSIONS.items() }
+    _location_to_cuteform = {
+        'hits': 'deck',
+        'daily': 'trade',
+        'bside': 'times',
+    }
+
+    filter_cuteform = {
+        'i_attribute': {
+        },
+        'i_unit': {
+        },
+        'i_subunit': {
+            'image_folder': 'i_subunit',
+            'title': _('Subunit'),
+            'extra_settings': {
+                'modal': 'true',
+                'modal-text': 'true',
+            },
+        },
+        'version': {
+            'to_cuteform': lambda k, v: SongCollection._version_images[k],
+            'image_folder': 'language',
+            'transform': CuteFormTransform.ImagePath,
+        },
+        'available': {
+            'type': CuteFormType.YesNo,
+        },
+        'location': {
+            'transform': CuteFormTransform.Flaticon,
+            'to_cuteform': lambda k, v: SongCollection._location_to_cuteform[k],
+        },
+    }
+
+    def to_fields(self, view, item, *args, **kwargs):
+
+        fields = super(SongCollection, self).to_fields(view, item, *args, icons=SONGS_ICONS,  images={
+                'attribute': staticImageURL(item.i_attribute, folder='i_attribute', extension='png'),
+                'unit': staticImageURL(item.i_unit, folder='i_unit', extension='png'),
+                'subunit': staticImageURL(item.i_subunit, folder='i_subunit', extension='png'),
+        }, **kwargs)
+
+        setSubField(fields, 'b_side_start', key='timezones', value=['Asia/Tokyo', 'Local time'])
+        setSubField(fields, 'b_side_end', key='timezones', value=['Asia/Tokyo', 'Local time'])
+        setSubField(fields, 'release', key='timezones', value=['Asia/Tokyo', 'Local time'])
+        setSubField(fields, 'length', key='value', value=lambda f: item.length_in_minutes)
+
+        return fields
+
+    class ItemView(MagiCollection.ItemView):
+        
+        def to_fields(self, item, order=None, extra_fields=None, exclude_fields=None, *args, **kwargs):
+            if extra_fields is None: extra_fields = []
+            if exclude_fields is None: exclude_fields = []
+            if order is None: order = []              
+
+            values = u' '
+            for fieldName, verbose_name in models.Song.SONGWRITERS:
+                value = getattr(item, fieldName)
+                exclude_fields.append(fieldName)
+                if value:
+                    values+=u'<b>{}:</b> {}<br />'.format(verbose_name, value)
+            if values and values is not u' ':
+                extra_fields.append(('songwriters', {
+                    'verbose_name': _('Songwriters'),
+                    'type': 'html',
+                    'value': mark_safe(u'<div class="songwriters-details">{}</div>'.format(values)),
+                    'icon': 'id',
+                    }))                
+  
+            status = getattr(item, 'status')
+            if status and status != 'ended':
+                start_date = getattr(item, 'b_side_start')
+                end_date = getattr(item, 'b_side_end')
+                if item.b_side_master is True:
+                    verbose = string_concat(_('B-Side'), ' - ', _('Countdown'), '  (MASTER)')
+                else:
+                    verbose = string_concat(_('B-Side'), ' - ', _('Countdown'))
+                extra_fields += [
+                    ('countdown', {
+                        'verbose_name': verbose,
+                        'value': mark_safe(u'<span class="fontx1-5 countdown" data-date="{date}" data-format="{sentence}"></h4>').format(
+                            date=torfc2822(end_date if status == 'current' else start_date),
+                            sentence=_('{time} left') if status == 'current' else _('Starts in {time}'),
+                        ),
+                        
+                        'icon': 'hourglass',
+                        'type': 'html',
+                    }),
+                    ]
+                  
+            else:
+                exclude_fields.append('b_side_start')
+                exclude_fields.append('b_side_end')
+
+            available = getattr(item, 'available')
+            if available == True:
+                av_value = True
+            else:
+                av_value = False
+            extra_fields += [
+                ('availability', {
+                    'verbose_name': _('Currently available'),
+                    'value': av_value,
+                    'icon': 'help',
+                    'type': 'bool',
+                }),
+            ]
+
+            for difficulty, d_verbose in models.Song.DIFFICULTIES:
+                difficulties = u' '
+                difficultystar = u'{}_difficulty'.format(difficulty)
+                difficultynote = u'{}_notes'.format(difficulty)
+                difficultystars = getattr(item, difficultystar)
+                difficultynotes = getattr(item, difficultynote)
+                temps = u'{} &#9734 rating'.format(difficultystars)
+                tempn = u'{} notes'.format(difficultynotes)
+                if difficultystars:
+                    if difficultynotes:
+                        difficulties += u'{}<br />{}'.format(temps, tempn)
+                        if difficulty is 'master' and item.master_swipe is True:
+                            difficulties += u'<br />{}'.format(_('with SWIPE notes'))
+                    else:
+                        difficulties += u'{}'.format(temps)
+                elif difficultynotes:
+                    difficulties += u'{}'.format(tempn)
+                    if difficulty is 'master' and item.master_swipe is True:
+                            difficulties += u'<br />{}'.format(_('with SWIPE notes'))
+                if difficulties is not u' ':
+                    extra_fields.append((difficulty, {
+                    'verbose_name': d_verbose,
+                    'type': 'html',
+                    'value': difficulties,
+                    }))
+                exclude_fields.append(difficulty)
+                exclude_fields.append(difficultynote)
+                exclude_fields.append(difficultystar)
+
+            exclude_fields.append('romaji')
+            exclude_fields.append('b_side_master')
+            exclude_fields.append('c_locations')
+            exclude_fields.append('master_swipe')
+
+            order = ['cover', 'title', 'attribute', 'unit', 'subunit', 'itunes_id', 'length', 'bpm', 'c_versions', 'availability', 'unlock',
+                     'daily', 'countdown', 'b_side_start', 'b_side_end', 'easy', 'normal', 'hard', 'expert',
+                     'master', 'songwriters', 'release'] + order
+
+            fields = super(SongCollection.ItemView, self).to_fields(
+                item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)
+
+            if item.romaji and item.romaji != item.title:
+                setSubField(fields, 'title', key='type', value='title_text')
+                setSubField(fields, 'title', key='title', value=item.title)
+                setSubField(fields, 'title', key='value', value=item.romaji)
+
+            setSubField(fields, 'unlock', key='type', value='text')
+            setSubField(fields, 'unlock', key='value', value=u'Rank {}'.format(item.unlock))
+
+            setSubField(fields, 'easy', key='image', value=staticImageURL('easy', folder='difficulty', extension='png'))
+            setSubField(fields, 'normal', key='image', value=staticImageURL('normal', folder='difficulty', extension='png'))
+            setSubField(fields, 'hard', key='image', value=staticImageURL('hard', folder='difficulty', extension='png'))
+            setSubField(fields, 'expert', key='image', value=staticImageURL('expert', folder='difficulty', extension='png'))
+            setSubField(fields, 'master', key='image', value=staticImageURL('master', folder='difficulty', extension='png'))
+
+            return fields
+        
+    def _modification_extra_context(self, context):
+        if 'js_variables' not in context:
+            context['js_variables'] = {}
+        context['js_variables']['version_prefixes'] = jsv(self._version_prefixes)
+        
+    class ListView(MagiCollection.ListView):
+        filter_form = forms.SongFilterForm
+        per_line = 4
+        default_ordering = '-release'
+        ajax_pagination_callback = 'loadSongs'
+
+        def extra_context(self, context):
+            super(SongCollection.ListView, self).extra_context(context)
+            self.collection._modification_extra_context(context)
+
+    class AddView(MagiCollection.AddView):
+        staff_required = True
+        permissions_required = ['manage_main_items']
+        ajax_callback = 'loadSongs'
+
+        def extra_context(self, context):
+            super(SongCollection.AddView, self).extra_context(context)
+            self.collection._modification_extra_context(context)
+
+    class EditView(MagiCollection.EditView):
+        staff_required = True
+        permissions_required = ['manage_main_items']
+        ajax_callback = 'loadSongs'
+        allow_delete = True
+
+        def extra_context(self, context):
+            super(SongCollection.EditView, self).extra_context(context)
+            self.collection._modification_extra_context(context)
+
+############################################################
+# Card Collection
+
+class CardCollection(MagiCollection):
+    queryset = models.Card.objects.all()
+    title = _('Card')
+    plural_title = _('Cards')
+    multipart = True
+    form_class = forms.CardForm
+    reportable = False
+    blockable = False
+    translated_fields = ('name', 'details')
+    icon = 'deck'
+    navbar_link_list = 'schoolidolfestival'
+
+    class ItemView(MagiCollection.ItemView):        
+        def to_fields(self, item, order=None, extra_fields=None, exclude_fields=None, *args, **kwargs):
+            if extra_fields is None: extra_fields = []
+            if exclude_fields is None: exclude_fields = []
+            if order is None: order = []
+            
+            ## idol
+            if item.idol:
+                extra_fields.append(('idol_details', {
+                    'verbose_name': _('Idol'),
+                    'type': 'html',
+                    'value': string_concat('<a href="', item.idol.item_url, '">', item.idol.t_name, '<img class="idol-small-image" src="', item.idol.image_url,'"></img></a>'),
+                    'icon': 'idol',
+                }))
+                
+            ## skill
+                if item.skill:
+                    skill_details = getattr(item, 'skill_details')
+                    for variable in models.Card.SKILL_REPLACE:
+                        og = skill_details
+                        var = getattr(item, variable)
+                        var_re = '{' + variable + '}'
+                        skill_details = og.replace(var_re, str(var))
+
+                    for ivariable in models.Card.IDOL_REPLACE:
+                        if ivariable is not 'unit':
+                            og = skill_details
+                            var = getattr(item.idol, 't_' + ivariable)
+                            var_re = '{' + ivariable + '}'
+                            skill_details = og.replace(var_re, str(var))
+                        elif item.idol.unit:
+                            skill_details = skill_details.replace('{unit}', item.idol.unit)
+                    
+                    skill_sentence=_('{} (Level 1)').format(skill_details)  
+                    extra_fields.append(('main_skill', {
+                        'verbose_name': _('Skill'),
+                        'type': 'html',
+                        'value': skill_sentence,
+                        'icon': 'sparkle',
+                        }))
+                    
+            ## leader skill
+            if item.center:
+                leader_skill = getattr(item, 'center_details')
+                leader_skill = leader_skill.format(getattr(item, 't_attribute'))
+                    
+                if item.rarity in ['UR', 'SSR']:
+                    leader_second = _('plus {group} members\' {} pts. up by {}%')
+                    if item.group is not 0 and item.boost_percent is not None:
+                        for gvariable, ggvariable in models.Card.GROUP_BOOST:
+                            if ggvariable is item.t_group:
+                                if item.t_group is not _('Unit'):
+                                    og = leader_second
+                                    var = getattr(item.idol, 't_' + gvariable)
+                                    leader_second = og.replace('{group}', var)
+                                else:
+                                    og = leader_second
+                                    leader_second = og.replace('{group}', item.idol.unit)
+                        leader_second = leader_second.format(item.t_attribute, item.boost_percent)
+                extra_fields.append(('leader_skill', {
+                    'verbose_name': _('Leader Skill'),
+                    'type': 'text',
+                    'value': leader_skill,
+                    'icon': 'center',
+                }))
+
+                if item.in_set:
+                    extra_fields.append(('set', {
+                        'verbose_name': _('Set'),
+                        'type': 'link',
+                        'ajax_link': item.in_set.ajax_cards_url,
+                        'link': item.in_set.cards_url,
+                        'link_text': unicode(item.in_set),
+                        'icon': 'scout-box',
+                    }))
+            
+            fields = super(CardCollection.ItemView, self).to_fields(
+                item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)
+
+            if item.idol and item.skill:
+                setSubField(fields, 'main_skill', key='value', value=string_concat(item.skill.card_html(), '<br />', skill_sentence))
+            if item.center:
+                setSubField(fields, 'leader_skill', key='type', value='title_text')
+                setSubField(fields, 'leader_skill', key='title', value=string_concat(item.t_attribute, ' ', item.t_center))
+
+                if item.group is not 0 and item.boost_percent is not None:
+                    setSubField(fields, 'leader_skill', key='value', value=string_concat(leader_skill, ', ', leader_second))
+
+            return fields
+        
+    class ListView(MagiCollection.ListView):
+        filter_form = forms.CardFilterForm
+        per_line = 4
+        default_ordering = '-release'
+
+############################################################
+# Skill Collection
+
+class SkillCollection(MagiCollection):
+    queryset = models.Skill.objects.all()
+    title = _('Skill')
+    plural_title = _('Skills')
+    multipart = True
+    form_class = forms.SkillForm
+    reportable = False
+    blockable = False
+    translated_fields = ('name', 'details',)
+    icon = 'sparkle'
+    navbar_link = False
+    permissions_required = ['manage_main_items']
+
+############################################################
+# Set Collection
+
+class SetCollection(MagiCollection):
+    queryset = models.Set.objects.all()
+    title = _('Set')
+    plural_title = _('Sets')
+    multipart = True
+    form_class = forms.SetForm
+    reportable = False
+    blockable = False
+    translated_fields = ('title', )
+    icon = 'scout-box'
+    navbar_link_list = 'schoolidolfestival'
+
+    class ListView(MagiCollection.ListView):
+        #filter_form = forms.SetFilterForm
+        item_template = custom_item_template
+        per_line = 4

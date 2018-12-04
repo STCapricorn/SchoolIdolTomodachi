@@ -106,6 +106,12 @@ LATEST_NEWS = getattr(django_settings, 'LATEST_NEWS', None)
 
 ENABLED_PAGES = DEFAULT_ENABLED_PAGES.copy()
 
+ENABLED_PAGES['wiki'][0]['enabled'] = True
+ENABLED_PAGES['wiki'][1]['enabled'] = True
+ENABLED_PAGES['wiki'][0]['navbar_link'] = False
+
+ENABLED_PAGES['map']['navbar_link_list'] = 'community'
+
 ENABLED_PAGES['discord'] = {
     'title': 'Discord',
     'icon': 'chat',
@@ -122,6 +128,15 @@ ENABLED_PAGES['twitter'] = {
     'redirect': 'https://twitter.com/{}'.format(TWITTER_HANDLE),
     'new_tab': True,
     'check_permissions': lambda c: c['request'].LANGUAGE_CODE not in DEFAULT_LANGUAGES_CANT_SPEAK_ENGLISH,
+}
+
+ENABLED_PAGES['skills'] = {
+    'title': _('Skills'),
+    'staff_required': True,
+    'permissions_required': ['manage_main_items'],
+    'icon': 'sparkle',
+    'navbar_link_list': 'staff',
+    'redirect': '/skills',
 }
 
 ENABLED_PAGES['sifsong_list'] = {
@@ -206,6 +221,22 @@ ENABLED_NAVBAR_LISTS['lovelive'] = {
         'song_list',
     ],
 }
+
+ENABLED_NAVBAR_LISTS['schoolidolfestival'] = {
+    'title': _('School Idol Festival'),
+    'icon': 'music',
+    'order': [
+        'card_list', 'set_list', 'event_list',
+        'wiki',
+    ],
+}
+ENABLED_NAVBAR_LISTS['community'] = {
+    'title': _('Community'),
+    'icon': 'users',
+    'order': ['account_list', 'map', 'twitter'],
+}
+
+NAVBAR_ORDERING = ['lovelive', 'schoolidolfestival', 'community', 'you', 'staff', 'more']
 
 ENABLED_NAVBAR_LISTS['games'] = {
     'icon': 'hobbies',
