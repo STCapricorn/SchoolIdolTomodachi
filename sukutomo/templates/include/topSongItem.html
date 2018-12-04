@@ -1,0 +1,32 @@
+﻿{% with song=item %}
+<div class="row">
+  <div class="col-md-5">
+    {% if song.cover %}
+      <img src="{{ song.cover_url }}" alt="{{ song }}" class="img-responsive song-cover">
+    {% else %}
+      <img src="/static/img/empty_song.png" alt="{{ song }}" class="img-responsive">
+    {% endif %}
+  </div>
+  <div class="col-md-7">
+    <div class="center-align-div">
+       {% if song.attribute %}
+         <img src="/static/img/i_attribute/{{ song.i_attribute }}.png" class="under-top">
+       {% endif %}
+       {% if song.subunit %}
+         <img src="/static/img/i_subunit/{{ song.i_subunit }}.png" class="under-top">
+       {% elif song.unit %}
+         <img src="/static/img/i_unit/{{ song.i_unit }}.png" class="under-top">
+       {% endif %}
+      <br />
+      <h2 class="song-margin">
+        {{ song.t_title }}
+        {% if song.romaji %}
+        <h3 class="under-top-row">
+          {{ song.romaji }}
+        </h3>
+        {% endif %}
+      </h1>
+    </div>
+  </div>
+</div>
+{% endwith %}

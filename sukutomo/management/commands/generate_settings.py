@@ -48,6 +48,20 @@ def generate_settings():
         idol.image_url,
     ) for idol in all_idols]
 
+    print 'Get max stats'
+    stats = {
+        'smile_max_idol': None,
+        'pure_max_idol': None,
+        'cool_max_idol': None,
+    }
+    try:
+        for stat in stats.keys():
+            max_stats = models.Card.objects.all().extra(select={
+            }).order_by('-' + stat)[0]
+            stats[stat] = getattr(max_stats, stat)
+    except IndexError:
+        pass
+    
     print 'Save generated settings'
 
     generateSettings({
@@ -56,6 +70,7 @@ def generate_settings():
         'DONATION_MONTH': donation_month,
         'STAFF_CONFIGURATIONS': staff_configurations,
         'FAVORITE_CHARACTERS': favorite_characters,
+        'MAX_STATS': stats,
         # 'BACKGROUNDS': backgrounds,
     })
 

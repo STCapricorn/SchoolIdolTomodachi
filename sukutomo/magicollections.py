@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
 from django.utils.translation import ugettext_lazy as _, get_language
-from django.utils.formats import dateformat
+from django.utils.formats import date_format
 from django.utils.safestring import mark_safe
 from django.utils.translation import string_concat
 from magi.item_model import getInfoFromChoices
@@ -90,11 +90,18 @@ IDOLS_ICONS = {
     'bust': 'measurements',
     'waist': 'measurements',
     'hips': 'measurements',
+    'color': 'palette',
     'hobbies': 'hobbies',
     'favorite_food': 'food-like',
     'least_favorite_food' : 'food-dislike',
     'description': 'author',
 }
+
+IDOL_ORDER = [
+    'image', 'name', 'japanese_name', 'attribute', 'unit', 'subunit', 'school',
+    'year', 'astrological_sign', 'birthday', 'age', 'blood', 'measurements', 'color',
+    'hobbies', 'favorite_food', 'least_favorite_food', 'description',
+]
 
 IDOLS_CUTEFORM = {
     'i_attribute': {
@@ -145,11 +152,11 @@ class IdolCollection(MagiCollection):
                 ),
         }, **kwargs)
 
-        if item.japanese_name is not None and get_language() == 'ja':
+        if item.japanese_name and get_language() == 'ja':
             setSubField(fields, 'name', key='value', value=item.japanese_name)
 
         setSubField(fields, 'birthday', key='type', value='text')
-        setSubField(fields, 'birthday', key='value', value=lambda f: dateformat.format(item.birthday, "F d"))
+        setSubField(fields, 'birthday', key='value', value=lambda f: date_format(item.birthday, format='MONTH_DAY_FORMAT', use_l10n=True))
 
         return fields
 
@@ -178,39 +185,31 @@ class IdolCollection(MagiCollection):
             if item.birthday is not None:
                 exclude_fields += ['age', 'i_astrological_sign']
             exclude_fields.append('japanese_name')
-
-            order = ['image', 'name', 'japanese_name', 'attribute', 'unit', 'subunit', 'school', 'year',
-                     'astrological_sign', 'birthday', 'age', 'blood', 'measurements', 'hobbies', 'favorite_food',
-                     'least_favorite_food', 'description'] + order
+            order = IDOL_ORDER + order
 
             fields = super(IdolCollection.ItemView, self).to_fields(item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)
 
-            if item.birthday is not None:
+            if item.birthday:
                 if item.astrological_sign is not None:
                     setSubField(fields, 'birthday', key='icon', value=None)
                     setSubField(fields, 'birthday', key='image', value=staticImageURL(item.i_astrological_sign, folder='i_astrological_sign', extension='png'))
-                if item.age is not None:
-                    setSubField(fields, 'birthday', key='type', value='title_text')
-                    setSubField(fields, 'birthday', key='title', value=lambda f: dateformat.format(item.birthday, "F d"))
-                    setSubField(fields, 'birthday', key='value', value=_('{age} years old').format(age=item.age))
-                else:
-                    setSubField(fields, 'birthday', key='type', value='text')
-                    setSubField(fields, 'birthday', key='value', value=lambda f: dateformat.format(item.birthday, "F d"))
+                if item.age:
+                    setSubField(fields, 'birthday', key='type', value='text_annotation')
+                    setSubField(fields, 'birthday', key='annotation', value=_('{age} years old').format(age=item.age))
 
-            if item.school is not None and item.i_year is not None:
+            if item.school and item.year:
                     setSubField(fields, 'school', key='type', value='title_text')
                     setSubField(fields, 'school', key='title', value=item.t_school)
                     setSubField(fields, 'school', key='value', value='{}'.format(unicode(item.t_year)))
 
             setSubField(fields, 'description', key='type', value='long_text')
 
-            if item.japanese_name is not None:
+            if item.japanese_name:
                 if get_language() == 'ja':
                     setSubField(fields, 'name', key='value', value=item.japanese_name)
                 else:
-                    setSubField(fields, 'name', key='type', value='title_text')
-                    setSubField(fields, 'name', key='title', value=item.name)
-                    setSubField(fields, 'name', key='value', value=item.japanese_name)
+                    setSubField(fields, 'name', key='type', value='text_annotation')
+                    setSubField(fields, 'name', key='annotation', value=item.japanese_name)
 
             return fields
 
@@ -245,7 +244,7 @@ class IdolCollection(MagiCollection):
 ############################################################
 # SIFEvents Collection
 
-EVENT_FIELDS_PER_VERSION = ['banner', 'countdown', 'start_date', 'end_date']
+EVENT_FIELDS_PER_VERSION = ['image', 'countdown', 'start_date', 'end_date']
 
 EVENT_ITEM_FIELDS_ORDER = [
     'banner', 'title', 'type', 'unit',
@@ -320,6 +319,7 @@ class SIFEventCollection(MagiCollection):
             if order is None: order = []
             exclude_fields.append('c_versions')
             for version, version_details in models.VERSIONS.items():
+                # Create countdown if event is upcoming/ongoing
                 status = getattr(item, u'{}status'.format(version_details['prefix']))
                 if status and status != 'ended':
                     start_date = getattr(item, u'{}start_date'.format(version_details['prefix']))
@@ -334,7 +334,7 @@ class SIFEventCollection(MagiCollection):
                             'icon': 'hourglass',
                             'type': 'html',
                         }),
-            ]
+                    ]                        
             exclude_fields.append('start_date')
             exclude_fields.append('end_date')
             
@@ -347,7 +347,7 @@ class SIFEventCollection(MagiCollection):
     class ListView(MagiCollection.ListView):
         filter_form = forms.SIFEventFilterForm
         per_line = 2
-        default_ordering = 'jp_start_date'
+        default_ordering = '-jp_start_date'
 
     def _modification_extra_context(self, context):
         if 'js_variables' not in context:
@@ -450,6 +450,7 @@ class SongCollection(MagiCollection):
         return fields
 
     class ItemView(MagiCollection.ItemView):
+        top_illustration = 'include/topSongItem'
         
         def to_fields(self, item, order=None, extra_fields=None, exclude_fields=None, *args, **kwargs):
             if extra_fields is None: extra_fields = []
@@ -538,12 +539,17 @@ class SongCollection(MagiCollection):
                 exclude_fields.append(difficultynote)
                 exclude_fields.append(difficultystar)
 
+            exclude_fields.append('title')
             exclude_fields.append('romaji')
-            exclude_fields.append('b_side_master')
+            exclude_fields.append('cover')
+            exclude_fields.append('i_attribute')
+            exclude_fields.append('i_unit')
+            exclude_fields.append('i_subunit')
             exclude_fields.append('c_locations')
+            exclude_fields.append('b_side_master')
             exclude_fields.append('master_swipe')
-
-            order = ['cover', 'title', 'attribute', 'unit', 'subunit', 'itunes_id', 'length', 'bpm', 'c_versions', 'availability', 'unlock',
+            
+            order = ['itunes_id', 'length', 'bpm', 'c_versions', 'availability', 'unlock',
                      'daily', 'countdown', 'b_side_start', 'b_side_end', 'easy', 'normal', 'hard', 'expert',
                      'master', 'songwriters', 'release'] + order
 
@@ -573,6 +579,7 @@ class SongCollection(MagiCollection):
         
     class ListView(MagiCollection.ListView):
         filter_form = forms.SongFilterForm
+        item_template = custom_item_template
         per_line = 4
         default_ordering = '-release'
         ajax_pagination_callback = 'loadSongs'
@@ -603,6 +610,53 @@ class SongCollection(MagiCollection):
 ############################################################
 # Card Collection
 
+CARD_AUTO_EXCLUDE = [
+    'limited', 'promo', 'support', 'rate', 'i_dependency', 'chance',
+    'number', 'length', 'i_center', 'i_group', 'boost_percent',
+    'smile_min', 'pure_min', 'cool_min', 'hp',
+] + models.Card.IDOLIZED_FIELDS + models.Card.UNIDOLIZED_FIELDS
+
+CARDS_CUTEFORM = {
+    'i_unit': {
+    },
+    'i_subunit': {
+        'image_folder': 'i_subunit',
+        'title': _('Subunit'),
+        'extra_settings': {
+            'modal': 'true',
+            'modal-text': 'true',
+        },
+    },
+    'i_attribute': {
+    },
+    'i_year': {
+        'type': CuteFormType.HTML,
+    },
+    'i_rarity': {
+        'image_folder': 'rarity_3',
+        'title': _('Rarity'),
+    },
+}
+
+CARDS_ICONS = {
+    'name': 'id', 'card_id': 'id', 'versions': 'world', 'release': 'date',
+    'images': 'pictures', 'icons': 'pictures', 'transparents': 'pictures',
+    'art': 'pictures', 'hp': 'hp', 'details': 'author',
+}
+
+CARD_IMAGES = {
+    ('image', _('Images')),
+    ('icon', _('Icons')),
+    ('transparent', _('Transparents')),
+    ('art', _('Art')),
+}
+
+CARD_ORDER = [
+    'card_id', 'name', 'idol_details', 'i_rarity', 'i_attribute',
+    'c_versions', 'release', 'set', 'main_skill', 'leader_skill',
+    'icons', 'images', 'arts', 'transparents', 'details'
+]
+
 class CardCollection(MagiCollection):
     queryset = models.Card.objects.all()
     title = _('Card')
@@ -615,52 +669,86 @@ class CardCollection(MagiCollection):
     icon = 'deck'
     navbar_link_list = 'schoolidolfestival'
 
-    class ItemView(MagiCollection.ItemView):        
+    filter_cuteform = CARDS_CUTEFORM
+
+    def to_fields(self, view, item, *args, **kwargs):
+
+        # Add/Edit view auto-see All-attribute rarity symbols
+        #Item/List view see proper attribute v. when known
+        if item.attribute:
+            rarityfolder='rarity_' + str(item.i_attribute)
+        else:
+            rarityfolder='rarity_3'
+
+        fields = super(CardCollection, self).to_fields(view, item, *args, icons=CARDS_ICONS,  images={
+                'attribute': staticImageURL(item.i_attribute, folder='i_attribute', extension='png'),
+                'rarity': staticImageURL(item.i_rarity, folder=rarityfolder, extension='png'),
+        }, **kwargs)
+
+        setSubField(fields, 'release', key='timezones', value=['Asia/Tokyo'])
+        setSubField(fields, 'card_id', key='type', value='text')
+        setSubField(fields, 'card_id', key='value', value=u'#{}'.format(item.card_id))
+        return fields
+
+    class ItemView(MagiCollection.ItemView):
+        top_illustration = 'items/cardItem'
+        ajax_callback = 'loadCard'
+        
         def to_fields(self, item, order=None, extra_fields=None, exclude_fields=None, *args, **kwargs):
             if extra_fields is None: extra_fields = []
             if exclude_fields is None: exclude_fields = []
             if order is None: order = []
-            
-            ## idol
+
+            # Add Idol field
             if item.idol:
                 extra_fields.append(('idol_details', {
                     'verbose_name': _('Idol'),
                     'type': 'html',
-                    'value': string_concat('<a href="', item.idol.item_url, '">', item.idol.t_name, '<img class="idol-small-image" src="', item.idol.image_url,'"></img></a>'),
+                    'value': string_concat('<a href="', item.idol.item_url, '"data-ajax-url="', item.idol.ajax_item_url,
+                        '"data-ajax-title="', item.idol, '">', item.idol.t_name, '<img class="idol-small-image" src="',
+                            item.idol.image_url,'"></img></a>'),
                     'icon': 'idol',
                 }))
-                
-            ## skill
-                if item.skill:
-                    skill_details = getattr(item, 'skill_details')
-                    for variable in models.Card.SKILL_REPLACE:
-                        og = skill_details
-                        var = getattr(item, variable)
-                        var_re = '{' + variable + '}'
-                        skill_details = og.replace(var_re, str(var))
 
-                    for ivariable in models.Card.IDOL_REPLACE:
-                        if ivariable is not 'unit':
-                            og = skill_details
-                            var = getattr(item.idol, 't_' + ivariable)
-                            var_re = '{' + ivariable + '}'
-                            skill_details = og.replace(var_re, str(var))
-                        elif item.idol.unit:
-                            skill_details = skill_details.replace('{unit}', item.idol.unit)
-                    
-                    skill_sentence=_('{} (Level 1)').format(skill_details)  
-                    extra_fields.append(('main_skill', {
-                        'verbose_name': _('Skill'),
-                        'type': 'html',
-                        'value': skill_sentence,
-                        'icon': 'sparkle',
-                        }))
-                    
-            ## leader skill
+            # Add skill                
+            if item.skill:
+                # Get list of variables to parse through
+                SKILL_REPLACE = models.Card.SKILL_REPLACE
+                if item.idol:
+                    SKILL_REPLACE += models.Card.IDOL_REPLACE
+                skill_details = getattr(item, 'skill_details')
+
+                # Either insert the variable info or ???
+                for variable in SKILL_REPLACE:
+                    if variable in models.Card.IDOL_REPLACE:
+                        _item = item.idol
+                    else:
+                        _item = item
+                    og = skill_details
+                    if getattr(_item, variable, None) is not None:
+                        #If translatable, get translated val instead
+                        if variable in models.Card.SKILL_REPLACE_TRANSLATE:
+                            var = getattr(_item, 't_{}'.format(variable))
+                        else:
+                            var = getattr(_item, variable)
+                    else:
+                        var = '???'
+                    var_re = '{' + variable + '}'
+                    skill_details = og.replace(var_re, mark_safe(var))
+
+                # Creates skill field 
+                skill_sentence=_('{} (Level 1)').format(skill_details)  
+                extra_fields.append(('main_skill', {
+                    'verbose_name': _('Skill'),
+                    'type': 'html',
+                    'value': skill_sentence,
+                    'icon': 'sparkle',
+                }))
+
+            # Add center skill
             if item.center:
                 leader_skill = getattr(item, 'center_details')
-                leader_skill = leader_skill.format(getattr(item, 't_attribute'))
-                    
+                leader_skill = leader_skill.format(getattr(item, 't_attribute'))  
                 if item.rarity in ['UR', 'SSR']:
                     leader_second = _('plus {group} members\' {} pts. up by {}%')
                     if item.group is not 0 and item.boost_percent is not None:
@@ -681,25 +769,66 @@ class CardCollection(MagiCollection):
                     'icon': 'center',
                 }))
 
-                if item.in_set:
-                    extra_fields.append(('set', {
-                        'verbose_name': _('Set'),
-                        'type': 'link',
-                        'ajax_link': item.in_set.ajax_cards_url,
-                        'link': item.in_set.cards_url,
-                        'link_text': unicode(item.in_set),
-                        'icon': 'scout-box',
+            # Add set
+            if item.in_set:
+                extra_fields.append(('set', {
+                    'verbose_name': _('Set'),
+                    'type': 'link',
+                    'ajax_link': item.in_set.ajax_cards_url,
+                    'link': item.in_set.cards_url,
+                    'link_text': unicode(item.in_set),
+                    'icon': 'scout-box',
+                }))
+
+            # Add images
+            for image, verbose_name in CARD_IMAGES:
+                #Regular images for each type
+                CARD_IMAGE_TYPES = [
+                    getattr(item, u'{}_url'.format(image)),
+                    getattr(item, u'{}_idol_url'.format(image)),
+                ]
+                exclude_fields.append(image)
+                exclude_fields.append(image + '_idol')
+                # Old images
+                if image is not 'transparent':
+                    CARD_IMAGE_TYPES += [
+                        getattr(item, u'old_{}_url'.format(image)),
+                        getattr(item, u'old_{}_idol_url'.format(image))
+                    ]
+                    exclude_fields.append('old_' + image)
+                    exclude_fields.append('old_' + image + '_idol')
+
+                # if type of image, append specific image field  
+                if getattr(item, image):
+                    extra_fields.append((u'{}s'.format(image), {
+                        'verbose_name': verbose_name,
+                        'type': 'images_links',
+                        'images': [{
+                            'value': image_url.format(image),
+                            'link': image_url.format(image),
+                            'verbose_name': verbose_name,
+                            'link_text': verbose_name,
+                        } for image_url in CARD_IMAGE_TYPES if image_url],
+                        'icon': 'pictures',
                     }))
+
+            # Exclude certain fields by default
+            for field in CARD_AUTO_EXCLUDE:
+                exclude_fields.append(field)
+
+            order = CARD_ORDER + order
             
             fields = super(CardCollection.ItemView, self).to_fields(
                 item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)
 
-            if item.idol and item.skill:
-                setSubField(fields, 'main_skill', key='value', value=string_concat(item.skill.card_html(), '<br />', skill_sentence))
+            if item.skill:
+                setSubField(fields, 'main_skill', key='value', value=string_concat(
+                    item.skill.card_html(), '<br />', skill_sentence))
+
             if item.center:
                 setSubField(fields, 'leader_skill', key='type', value='title_text')
                 setSubField(fields, 'leader_skill', key='title', value=string_concat(item.t_attribute, ' ', item.t_center))
-
+                # if info for 2nd half of center skill is available
                 if item.group is not 0 and item.boost_percent is not None:
                     setSubField(fields, 'leader_skill', key='value', value=string_concat(leader_skill, ', ', leader_second))
 
@@ -707,8 +836,18 @@ class CardCollection(MagiCollection):
         
     class ListView(MagiCollection.ListView):
         filter_form = forms.CardFilterForm
-        per_line = 4
-        default_ordering = '-release'
+        item_template = custom_item_template
+        per_line = 3
+        default_ordering = '-release,-card_id'
+
+    class AddView(MagiCollection.AddView):
+        staff_required = True
+        permissions_required = ['manage_main_items']
+
+    class EditView(MagiCollection.EditView):
+        staff_required = True
+        permissions_required = ['manage_main_items']
+        allow_delete = True
 
 ############################################################
 # Skill Collection
@@ -725,6 +864,29 @@ class SkillCollection(MagiCollection):
     icon = 'sparkle'
     navbar_link = False
     permissions_required = ['manage_main_items']
+
+    filter_cuteform = CARDS_CUTEFORM
+
+    def to_fields(self, view, item, *args, **kwargs):
+    
+        fields = super(SkillCollection, self).to_fields(view, item, *args,
+            icons={'name':'id', 'skill_type':'category', 'details':'author'}, **kwargs)
+
+        return fields
+
+    class ListView(MagiCollection.ListView):
+        #filter_form = forms.SkillFilterForm
+        item_template = custom_item_template
+        per_line = 6
+
+    class AddView(MagiCollection.AddView):
+        staff_required = True
+        permissions_required = ['manage_main_items']
+
+    class EditView(MagiCollection.EditView):
+        staff_required = True
+        permissions_required = ['manage_main_items']
+        allow_delete = True
 
 ############################################################
 # Set Collection
@@ -745,3 +907,12 @@ class SetCollection(MagiCollection):
         #filter_form = forms.SetFilterForm
         item_template = custom_item_template
         per_line = 4
+
+    class AddView(MagiCollection.AddView):
+        staff_required = True
+        permissions_required = ['manage_main_items']
+
+    class EditView(MagiCollection.EditView):
+        staff_required = True
+        permissions_required = ['manage_main_items']
+        allow_delete = True
