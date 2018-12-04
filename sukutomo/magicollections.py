@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from collections import OrderedDict
 from django.utils.translation import ugettext_lazy as _, get_language
 from django.utils.formats import dateformat
 from django.utils.safestring import mark_safe
@@ -7,9 +8,23 @@ from magi.magicollections import (
     MagiCollection,
     AccountCollection as _AccountCollection,
     PrizeCollection as _PrizeCollection,
+    DonateCollection as _DonateCollection,
+    ActivityCollection as _ActivityCollection,
 )
-from magi.utils import staticImageURL, CuteFormType, CuteFormTransform, custom_item_template, torfc2822, setSubField, jsv
+from magi.utils import (
+    staticImageURL,
+    CuteFormType,
+    CuteFormTransform,
+    custom_item_template,
+    torfc2822,
+    setSubField,
+    jsv,
+    mergedFieldCuteForm,
+)
 from sukutomo import forms, models
+from sukutomo.utils import (
+    sortIdolUnit,
+)
 
 ############################################################
 # Prize Collection
@@ -18,10 +33,17 @@ class PrizeCollection(_PrizeCollection):
     enabled = True
 
 ############################################################
+# Donate Collection
+
+class DonateCollection(_DonateCollection):
+    enabled = True
+
+############################################################
 # Account Collection
 
 class AccountCollection(_AccountCollection):
     form_class = forms.AccountForm
+    navbar_link_list = 'community'
 
     filter_cuteform = {
         'accept_friend_requests': {
@@ -32,7 +54,7 @@ class AccountCollection(_AccountCollection):
             'transform': CuteFormTransform.FlaticonWithText,
         },
         'i_version': {
-            'to_cuteform': lambda k, v: models.Account.VERSIONS[models.Account.get_reverse_i('version', k)]['image'],
+            'to_cuteform': lambda k, v: models.VERSIONS[models.Account.get_reverse_i('version', k)]['image'],
             'image_folder': 'language',
             'transform': CuteFormTransform.ImagePath,
         },
@@ -41,8 +63,16 @@ class AccountCollection(_AccountCollection):
         },
     }
 
-    class ListView(_AccountCollection.ListView):
-        pass
+############################################################
+# Activity Collection
+
+class ActivityCollection(_ActivityCollection):
+    class ListView(_ActivityCollection.ListView):
+        def extra_context(self, context):
+            super(ActivityCollection.ListView, self).extra_context(context)
+            context['game_name'] = _('School Idol Festival')
+            context['t_site_name'] = _('School Idol Tomodachi')
+            context['site_description'] = _(u'The {game} Database & Community').format(game=_('Love Live!'))
 
 ############################################################
 ############################################################
@@ -67,16 +97,6 @@ IDOLS_ICONS = {
 }
 
 IDOLS_CUTEFORM = {
-    'i_unit': {
-    },
-    'i_subunit': {
-        'image_folder': 'i_subunit',
-        'title': _('Subunit'),
-        'extra_settings': {
-            'modal': 'true',
-            'modal-text': 'true',
-        },
-    },
     'i_attribute': {
     },
     'i_year': {
@@ -88,6 +108,16 @@ IDOLS_CUTEFORM = {
         'type': CuteFormType.HTML,
     },
 }
+mergedFieldCuteForm(IDOLS_CUTEFORM, {
+    'title': string_concat(_('Unit'), ' / ', _('Subunit')),
+    'extra_settings': {
+        'modal': 'true',
+        'modal-text': 'true',
+    },
+}, OrderedDict ([
+    ('i_unit', lambda k, v: models.Idol.unitImage(i=int(k))),
+    ('i_subunit', lambda k, v: models.Idol.subUnitImage(i=int(k))),
+]))
 
 class IdolCollection(MagiCollection):
     queryset = models.Idol.objects.all()
@@ -98,7 +128,9 @@ class IdolCollection(MagiCollection):
     reportable = False
     blockable = False
     translated_fields = ('name', 'hobbies', 'favorite_food', 'least_favorite_food', 'description', )
-    icon = 'idolized'
+    icon = 'idol'
+    navbar_link_list = 'lovelive'
+    filter_cuteform = IDOLS_CUTEFORM
 
     def to_fields(self, view, item, *args, **kwargs):
 
@@ -106,7 +138,11 @@ class IdolCollection(MagiCollection):
                 'attribute': staticImageURL(item.i_attribute, folder='i_attribute', extension='png'),
                 'unit': staticImageURL(item.i_unit, folder='i_unit', extension='png'),
                 'subunit': staticImageURL(item.i_subunit, folder='i_subunit', extension='png'),
-                'astrological_sign': staticImageURL(item.i_astrological_sign, folder='i_astrological_sign', extension='png'),
+                'astrological_sign': staticImageURL(
+                    item.i_astrological_sign,
+                    folder='i_astrological_sign',
+                    extension='png',
+                ),
         }, **kwargs)
 
         if item.japanese_name is not None and get_language() == 'ja':
@@ -116,8 +152,6 @@ class IdolCollection(MagiCollection):
         setSubField(fields, 'birthday', key='value', value=lambda f: dateformat.format(item.birthday, "F d"))
 
         return fields
-
-    filter_cuteform = IDOLS_CUTEFORM
 
     class ItemView(MagiCollection.ItemView):
 
@@ -183,9 +217,21 @@ class IdolCollection(MagiCollection):
     class ListView(MagiCollection.ListView):
         filter_form = forms.IdolFilterForm
         item_template = custom_item_template
-        per_line = 6
-        page_size = 18
-        default_ordering = '-i_school'
+        per_line = 9
+        page_size = 36
+        default_ordering = 'unit'
+
+        def get_queryset(self, queryset, parameters, request):
+            queryset = super(IdolCollection.ListView, self).get_queryset(queryset, parameters, request)
+            if request.GET.get('ordering', 'unit') == 'unit':
+                queryset = sortIdolUnit(queryset)
+            return queryset
+
+        def extra_context(self, context):
+            super(IdolCollection.ListView, self).extra_context(context)
+            if bool([k for k in context['request'].GET.keys() if k != 'page']):
+                context['per_line'] = 4
+                context['col_size'] = 3
 
     class AddView(MagiCollection.AddView):
         staff_required = True
@@ -196,14 +242,14 @@ class IdolCollection(MagiCollection):
         permissions_required = ['manage_main_items']
 
 ############################################################
-# Events Collection
+# SIFEvents Collection
 
 EVENT_FIELDS_PER_VERSION = ['banner', 'countdown', 'start_date', 'end_date']
 
 EVENT_ITEM_FIELDS_ORDER = [
     'banner', 'title', 'type', 'unit',
 ] + [
-    u'{}{}'.format(_v['prefix'], _f) for _v in models.Account.VERSIONS.values()
+    u'{}{}'.format(_v['prefix'], _f) for _v in models.VERSIONS.values()
     for _f in EVENT_FIELDS_PER_VERSION
 ]
 
@@ -217,25 +263,26 @@ EVENTS_ICONS = {
     'type': 'toggler',
 }
 
-class EventCollection(MagiCollection):
-    queryset = models.Event.objects.all()
+class SIFEventCollection(MagiCollection):
+    queryset = models.SIFEvent.objects.all()
     title = _('Event')
     plural_title = _('Events')
     multipart = True
-    form_class = forms.EventForm
+    form_class = forms.SIFEventForm
     reportable = False
     blockable = False
     translated_fields = ('title', )
     icon = 'event'
+    navbar_link_list = 'games'
 
-    _version_images = { _k: _v['image'] for _k, _v in models.Account.VERSIONS.items() }
-    _version_prefixes = { _k: _v['prefix'] for _k, _v in models.Account.VERSIONS.items() }
+    _version_images = { _k: _v['image'] for _k, _v in models.VERSIONS.items() }
+    _version_prefixes = { _k: _v['prefix'] for _k, _v in models.VERSIONS.items() }
 
     filter_cuteform = {
         'i_unit': {
         },
         'version': {
-            'to_cuteform': lambda k, v: EventCollection._version_images[k],
+            'to_cuteform': lambda k, v: SIFEventCollection._version_images[k],
             'image_folder': 'language',
             'transform': CuteFormTransform.ImagePath,
         },
@@ -243,7 +290,7 @@ class EventCollection(MagiCollection):
 
     def to_fields(self, view, item, *args, **kwargs):
 
-        fields = super(EventCollection, self).to_fields(view, item, *args, icons=EVENTS_ICONS,  images={
+        fields = super(SIFEventCollection, self).to_fields(view, item, *args, icons=EVENTS_ICONS,  images={
                 'unit': staticImageURL(item.i_unit, folder='i_unit', extension='png'),
         }, **kwargs)
 
@@ -271,7 +318,7 @@ class EventCollection(MagiCollection):
             if exclude_fields is None: exclude_fields = []
             if order is None: order = []
             exclude_fields.append('c_versions')
-            for version, version_details in models.Account.VERSIONS.items():
+            for version, version_details in models.VERSIONS.items():
                 status = getattr(item, u'{}status'.format(version_details['prefix']))
                 if status and status != 'ended':
                     start_date = getattr(item, u'{}start_date'.format(version_details['prefix']))
@@ -290,13 +337,13 @@ class EventCollection(MagiCollection):
             exclude_fields.append('start_date')
             exclude_fields.append('end_date')
             order = EVENT_ITEM_FIELDS_ORDER + order
-            fields = super(EventCollection.ItemView, self).to_fields(
+            fields = super(SIFEventCollection.ItemView, self).to_fields(
                 item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)
 
             return fields
 
     class ListView(MagiCollection.ListView):
-        filter_form = forms.EventFilterForm
+        filter_form = forms.SIFEventFilterForm
         per_line = 2
         default_ordering = 'jp_start_date'
 
@@ -312,7 +359,7 @@ class EventCollection(MagiCollection):
         ajax_callback = 'loadVersions'
 
         def extra_context(self, context):
-            super(EventCollection.AddView, self).extra_context(context)
+            super(SIFEventCollection.AddView, self).extra_context(context)
             self.collection._modification_extra_context(context)
 
     class EditView(MagiCollection.EditView):
@@ -321,5 +368,5 @@ class EventCollection(MagiCollection):
         ajax_callback = 'loadVersions'
 
         def extra_context(self, context):
-            super(EventCollection.EditView, self).extra_context(context)
+            super(SIFEventCollection.EditView, self).extra_context(context)
             self.collection._modification_extra_context(context)

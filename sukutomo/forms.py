@@ -3,10 +3,15 @@ from magi import forms
 from django.core.validators import MinValueValidator
 from django.db.models.fields import BLANK_CHOICE_DASH
 from django.utils.translation import ugettext_lazy as _, string_concat
-from magi.utils import PastOnlyValidator
+from magi.utils import (
+    PastOnlyValidator,
+)
 from magi.forms import AutoForm, MagiFiltersForm, MagiFilter
 from sukutomo import models
 from sukutomo.django_translated import t
+
+############################################################
+# Account
 
 class AccountForm(forms.AccountForm):
     start_date = forms.forms.DateField(required=False, label=_('Start Date'), validators=[
@@ -23,6 +28,14 @@ class AccountForm(forms.AccountForm):
         if 'nickname' in self.fields and self.request.user.is_authenticated():
             self.fields['nickname'].initial = self.request.user.username
 
+############################################################
+############################################################
+############################################################
+############################################################
+
+############################################################
+# Idol
+
 class IdolForm(AutoForm):
     class Meta:
         model = models.Idol
@@ -30,11 +43,15 @@ class IdolForm(AutoForm):
         fields = '__all__'
 
 class IdolFilterForm(MagiFiltersForm):
+    merge_fields = [
+        ['i_unit', 'i_subunit'],
+    ]
     search_fields = ['name', 'japanese_name', 'hobbies', 'favorite_food', 'least_favorite_food', 'description']
 
     ordering_fields = [
         ('name', _('Name')),
         ('japanese_name', string_concat(_('Name'), ' (', t['Japanese'], ')')),
+        ('unit', _('Unit')),
         ('i_school', _('School')),
         ('birthday', _('Birthday')),
         ('age', _('Age')),
@@ -44,11 +61,25 @@ class IdolFilterForm(MagiFiltersForm):
         ('hips', _('Hips')),
     ]
 
+    def __init__(self, *args, **kwargs):
+        super(IdolFilterForm, self).__init__(*args, **kwargs)
+        self.reorder_fields(['search', 'i_unit_i_subunit'])
+
     class Meta:
         model = models.Idol
-        fields = ('search', 'i_attribute', 'i_unit', 'i_subunit', 'i_school', 'i_year', 'i_astrological_sign', 'i_blood')
+        fields = ('search', 'i_attribute', 'i_school', 'i_year', 'i_astrological_sign', 'i_blood')
 
-class EventForm(AutoForm):
+############################################################
+############################################################
+############################################################
+
+############################################################
+# School Idol Festival (SIF)
+
+############################################################
+# Event
+
+class SIFEventForm(AutoForm):
 
     jp_start_date = forms.forms.DateField(label=string_concat(_('Japanese version'), ' - ', _('Beginning')), required=False)
     jp_end_date = forms.forms.DateField(label=string_concat(_('Japanese version'), ' - ', _('End')), required=False)
@@ -66,11 +97,11 @@ class EventForm(AutoForm):
     cn_end_date = forms.forms.DateField(label=string_concat(_('Chinese version'), ' - ', _('End')), required=False)
 
     class Meta:
-        model = models.Event
+        model = models.SIFEvent
         save_owner_on_creation = True
         fields = '__all__'
 
-class EventFilterForm(MagiFiltersForm):
+class SIFEventFilterForm(MagiFiltersForm):
     search_fields = ['title', 'd_titles']
 
     ordering_fields = [
@@ -86,5 +117,5 @@ class EventFilterForm(MagiFiltersForm):
     version_filter = MagiFilter(to_queryset=lambda form, queryset, request, value: queryset.filter(c_versions__contains=u'"{}"'.format(value)))
 
     class Meta:
-        model = models.Event
+        model = models.SIFEvent
         fields = ('search', 'i_type', 'i_unit', 'version')

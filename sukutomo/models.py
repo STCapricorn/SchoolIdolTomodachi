@@ -7,11 +7,29 @@ from django.utils.translation import ugettext_lazy as _, string_concat, get_lang
 from django.db import models
 from django.utils import timezone
 from django.conf import settings as django_settings
-from magi.utils import PastOnlyValidator, staticImageURL, ordinalNumber
+from magi.utils import (
+    PastOnlyValidator,
+    staticImageURL,
+    ordinalNumber,
+    tourldash,
+)
 from magi.abstract_models import BaseAccount
 from magi.item_model import MagiModel, i_choices, getInfoFromChoices
-from magi.models import uploadItem
+from magi.models import uploadItem, uploadTiny
 from sukutomo.django_translated import t
+
+VERSIONS = OrderedDict((
+    ('JP', { 'translation': _('Japanese version'), 'image': 'ja', 'prefix': 'jp_' }),
+    ('WW', { 'translation': _('Worldwide version'), 'image': 'world', 'prefix': 'ww_' }),
+    ('KR', { 'translation': _('Korean version'), 'image': 'kr', 'prefix': 'kr_' }),
+    ('CN', { 'translation': _('Chinese version'), 'image': 'zh-hans', 'prefix': 'cn_' }),
+    ('TW', { 'translation': _('Taiwanese version'), 'image': 'zh-hant', 'prefix': 'tw_' }),
+))
+
+IMPORTANT_VERSIONS = ['WW', 'JP']
+
+LANGUAGES_NEED_OWN_NAME = [ l for l in django_settings.LANGUAGES if l[0] in ['ru', 'zh-hans', 'zh-hant', 'kr'] ]
+ALL_ALT_LANGUAGES = [ l for l in django_settings.LANGUAGES if l[0] != 'en' ]
 
 class Account(BaseAccount):
     collection_name = 'account'
@@ -23,13 +41,6 @@ class Account(BaseAccount):
 
     # Details
 
-    VERSIONS = OrderedDict((
-        ('JP', { 'translation': _('Japanese version'), 'image': 'ja', 'prefix': 'jp_' }),
-        ('WW', { 'translation': _('Worldwide version'), 'image': 'world', 'prefix': 'ww_' }),
-        ('KR', { 'translation': _('Korean version'), 'image': 'kr', 'prefix': 'kr_' }),
-        ('CN', { 'translation': _('Chinese version'), 'image': 'zh-hans', 'prefix': 'cn_' }),
-        ('TW', { 'translation': _('Taiwanese version'), 'image': 'zh-hant', 'prefix': 'tw_' }),
-    ))
 
     VERSION_CHOICES = [(name, info['translation']) for name, info in VERSIONS.items()]
     i_version = models.PositiveIntegerField(_('Version'), choices=i_choices(VERSION_CHOICES), default=1)
@@ -101,26 +112,23 @@ class Account(BaseAccount):
 ############################################################
 # Idols
 
-LANGUAGES_NEED_OWN_NAME = [ l for l in django_settings.LANGUAGES if l[0] in ['ru', 'zh-hans', 'zh-hant', 'kr'] ]
-ALL_ALT_LANGUAGES = [ l for l in django_settings.LANGUAGES if l[0] != 'en' ]
-
 class Idol(MagiModel):
     collection_name = 'idol'
-
     owner = models.ForeignKey(User, related_name='added_idols')
-    name = models.CharField(_('Name'), max_length=100, unique=True)
 
+    name = models.CharField(_('Name'), max_length=100, unique=True)
+    japanese_name = models.CharField(string_concat(_('Name'), ' (', t['Japanese'], ')'), max_length=100, null=True)
     NAMES_CHOICES = LANGUAGES_NEED_OWN_NAME
     d_names = models.TextField(null=True)
 
-    @property
-    def t_name(self):
-        if get_language() == 'ja':
-            return self.japanese_name
-        return self.names.get(get_language(), self.name)
+    # @property
+    # def t_name(self):
+    #     if get_language() == 'ja':
+    #         return self.japanese_name
+    #     return self.names.get(get_language(), self.name)
 
-    japanese_name = models.CharField(string_concat(_('Name'), ' (', t['Japanese'], ')'), max_length=100, null=True)
-    image = models.ImageField(_('Image'), upload_to=uploadItem('i'), null=True)
+    #_original_image = models.ImageField(null=True, upload_to=uploadTiny('idol'))
+    image = models.ImageField(_('Image'), upload_to=uploadItem('idol'), null=True)
 
     ATTRIBUTE_CHOICES = (
         ('smile', _('Smile')),
@@ -130,39 +138,59 @@ class Idol(MagiModel):
     )
 
     i_attribute = models.PositiveIntegerField(_('Attribute'), choices=i_choices(ATTRIBUTE_CHOICES), null=True)
-    @property
-    def attribute_image_url(self): return staticImageURL(self.i_attribute, folder='i_attribute', extension='png')
+    attribute_image_url = property(lambda _s: staticImageURL(_s.i_attribute, folder='i_attribute', extension='png'))
 
     UNIT_CHOICES = (
         u'μ\'s',
-        'Aqours',
+        u'Aqours',
+        u'Nijigasaki High School',
+        u'Saint Snow',
+        u'A-RISE',
     )
+    MAIN_UNITS = [
+        u'μ\'s',
+        u'Aqours',
+        u'Nijigasaki High School',
+    ]
 
     i_unit = models.PositiveIntegerField(_('Unit'), choices=i_choices(UNIT_CHOICES), null=True)
+    unit_image = property(lambda _s: _s.unitImage(s=_s.unit))
+
+    @classmethod
+    def unitImage(self, i=None, s=None):
+        return staticImageURL(tourldash(s or self.get_reverse_i('unit', i)), folder='i_unit', extension='png')
+
+    @property
+    def main(self):
+        return self.unit in self.MAIN_UNITS
 
     SUBUNIT_CHOICES = (
         'Printemps',
         'Lily White',
         'BiBi',
-        'CYaRon',
+        'CYaRon!',
         'AZALEA',
         'Guilty Kiss',
-        'Saint Snow',
-        'A-RISE',
     )
 
     i_subunit = models.PositiveIntegerField(_('Subunit'), choices=i_choices(SUBUNIT_CHOICES), null=True)
+    subunit_image = property(lambda _s: _s.subUnitImage(s=_s.subunit))
+
+    @classmethod
+    def subUnitImage(self, i=None, s=None):
+        return staticImageURL(tourldash(s or self.get_reverse_i('subunit', i)), folder='i_subunit', extension='png')
 
     SCHOOL_CHOICES = [
+        ('otonokizaka', _('Otonokizaka Academy')),
+        ('uranohoshi', _('Uranohoshi Girls\' High School')),
+        ('nijigasaki', _('Nijigasaki High School')),
         ('chitose', _('Chitose Bridge High School')),
         ('seiran', _('Seiran High School')),
         ('shinonome', _('Shinonome Academy')),
         ('shion', _('Shion Girls\' Academy')),
         ('touou', _('Touou Academy')),
         ('yg', _('Y.G. International Academy')),
-        ('nijigasaki', _('Nijigasaki High School')),
-        ('uranohoshi', _('Uranohoshi Girls\' High School')),
-        ('otonokizaka', _('Otonokizaka Academy')),
+        ('utx', _('UTX High School')),
     ]
 
     i_school = models.PositiveIntegerField(_('School'), choices=i_choices(SCHOOL_CHOICES), null=True)
@@ -220,30 +248,75 @@ class Idol(MagiModel):
     hips = models.PositiveIntegerField(_('Hips'), null=True)
 
     hobbies = models.CharField(_('Hobbies'), max_length=100, null=True)
-
     HOBBIESS_CHOICES = ALL_ALT_LANGUAGES
     d_hobbiess = models.TextField(null=True)
 
     favorite_food = models.CharField(_('Liked food'), max_length=100, null=True)
-
     FAVORITE_FOODS_CHOICES = ALL_ALT_LANGUAGES
-    d_favorite_foods = models.TextField(_('Disliked food'), null=True)
+    d_favorite_foods = models.TextField(_('Liked food'), null=True)
 
-    least_favorite_food = models.CharField(_('Least favorite food'), max_length=100, null=True)
-
+    least_favorite_food = models.CharField(_('Disliked food'), max_length=100, null=True)
     LEAST_FAVORITE_FOODS_CHOICES = ALL_ALT_LANGUAGES
-    d_least_favorite_foods = models.TextField(null=True)
+    d_least_favorite_foods = models.TextField(_('Disliked food'), null=True)
 
     description = models.TextField(_('Description'), null=True)
 
     DESCRIPTIONS_CHOICES = ALL_ALT_LANGUAGES
     d_descriptions = models.TextField(null=True)
 
+    tinypng_settings = {
+        'image': {
+            'resize': 'scale',
+            'height': 350,
+        },
+    }
+
+    def __unicode__(self):
+        return self.t_name
+
+############################################################
+# Voice actresses
+
+class VoiceActress(MagiModel):
+    collection_name = 'voiceactress'
+    owner = models.ForeignKey(User, related_name='added_voiceactresses')
+
+    name = models.CharField(_('Name'), max_length=100, unique=True)
+    japanese_name = models.CharField(string_concat(_('Name'), ' (', t['Japanese'], ')'), max_length=100, null=True)
+    NAMES_CHOICES = LANGUAGES_NEED_OWN_NAME
+    d_names = models.TextField(null=True)
+
+    nickname = models.CharField(_('Name'), max_length=100, unique=True)
+    japanese_nickname = models.CharField(string_concat(_('Name'), ' (', t['Japanese'], ')'), max_length=100, null=True)
+    NICKNAMES_CHOICES = LANGUAGES_NEED_OWN_NAME
+    d_nicknames = models.TextField(null=True)
+
+    _original_image = models.ImageField(null=True, upload_to=uploadTiny('voice_actress'))
+    image = models.ImageField(_('Image'), upload_to=uploadItem('voice_actress'), null=True)
+
+    SOCIAL_MEDIA = OrderedDict([
+        ('twitter', {
+            'translation': _('Twitter'),
+        }),
+        ('instagram', {
+            'translation': _('Instagram'),
+        }),
+    ])
+    SOCIAL_MEDIA_CHOICES = [(_name, _info['translation']) for _name, _info in SOCIAL_MEDIA.items()]
+    d_social_media = models.TextField(_('Social media'), null=True)
+
+    tinypng_settings = {
+        'image': {
+            'resize': 'scale',
+            'height': 350,
+        },
+    }
+
 ############################################################
 # Events
 
-class Event(MagiModel):
-    collection_name = 'event'
+class SIFEvent(MagiModel):
+    collection_name = 'sifevent'
     owner = models.ForeignKey(User, related_name='added_events')
 
     title = models.CharField(_('Title'), max_length=100)
@@ -294,8 +367,8 @@ class Event(MagiModel):
     cn_end_date = models.DateTimeField(string_concat(_('Chinese version'), ' - ',_('End')), null=True)
 
     def get_status(self, version='JP'):
-        start_date = getattr(self, u'{}start_date'.format(Account.VERSIONS[version]['prefix']))
-        end_date = getattr(self, u'{}end_date'.format(Account.VERSIONS[version]['prefix']))
+        start_date = getattr(self, u'{}start_date'.format(VERSIONS[version]['prefix']))
+        end_date = getattr(self, u'{}end_date'.format(VERSIONS[version]['prefix']))
         if not end_date or not start_date:
             return None
         now = timezone.now()
