@@ -1,16 +1,66 @@
 import datetime
 from magi import forms
+from django.conf import settings as django_settings
 from django.core.validators import MinValueValidator
 from django.db.models import Q
 from django.db.models.fields import BLANK_CHOICE_DASH
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _, string_concat
+from magi.item_model import i_choices
 from magi.utils import (
     PastOnlyValidator,
 )
 from magi.forms import AutoForm, MagiFiltersForm, MagiFilter
 from sukutomo import models
 from sukutomo.django_translated import t
+
+############################################################
+# Form utils
+
+SUB_UNIT_CHOICE_FIELD = forms.forms.ChoiceField(
+    choices=BLANK_CHOICE_DASH + [
+        (u'{}'.format(i), unit) for i, unit in i_choices(models.Idol.UNIT_CHOICES)
+    ] + [
+        (u'{}'.format(i + 2), subunit)
+        for i, subunit in i_choices(models.Idol.SUBUNIT_CHOICES)
+    ],
+    label=_('Unit'),
+    initial=None,
+)
+
+def sub_unit_to_queryset(prefix=''):
+    def _sub_unit_to_queryset(form, queryset, request, value):
+        if int(value) < 2:
+            return queryset.filter(**{ u'{}i_unit'.format(prefix): value })
+        elif int(value) < 10:
+            return queryset.filter(**{ u'{}i_subunit'.format(prefix): int(value) - 2 })
+        return queryset
+    return _sub_unit_to_queryset
+
+IDOL_SUB_UNIT_CHOICE_FIELD = forms.forms.ChoiceField(
+    choices=BLANK_CHOICE_DASH + [
+        (u'{}'.format(i), unit) for i, unit in i_choices(models.Song.UNIT_CHOICES)
+    ] + [
+        (u'{}'.format(i + 2), subunit)
+        for i, subunit in i_choices(models.Song.SUBUNIT_CHOICES)
+    ] + [
+        (u'{}'.format(id + 10), name)
+        for (id, name, image) in getattr(django_settings, 'FAVORITE_CHARACTERS', [])
+    ],
+    label=string_concat(_('Unit'), ' / ', _('Idol')),
+    initial=None,
+)
+
+def idol_sub_unit_to_queryset(prefix=''):
+    def _idol_sub_unit_to_queryset(form, queryset, request, value):
+        if int(value) < 2:
+            return queryset.filter(**{ u'{}i_unit'.format(prefix): value })
+        elif int(value) < 10:
+            return queryset.filter(**{ u'{}i_subunit'.format(prefix): int(value) - 2 })
+        elif value:
+            return queryset.filter(**{ u'idol_id': int(value) - 10})
+        return queryset
+    return _idol_sub_unit_to_queryset
 
 ############################################################
 # Account
@@ -29,6 +79,9 @@ class AccountForm(forms.AccountForm):
             del(self.fields['transfer_code'])
         if 'nickname' in self.fields and self.request.user.is_authenticated():
             self.fields['nickname'].initial = self.request.user.username
+      
+############################################################
+# Idol
 
 ############################################################
 ############################################################
@@ -63,13 +116,16 @@ class IdolFilterForm(MagiFiltersForm):
         ('hips', _('Hips')),
     ]
 
+    sub_unit = SUB_UNIT_CHOICE_FIELD
+    sub_unit_filter = MagiFilter(to_queryset=sub_unit_to_queryset())
+
     def __init__(self, *args, **kwargs):
         super(IdolFilterForm, self).__init__(*args, **kwargs)
         self.reorder_fields(['search', 'i_unit_i_subunit'])
 
     class Meta:
         model = models.Idol
-        fields = ('search', 'i_attribute', 'i_school', 'i_year', 'i_astrological_sign', 'i_blood')
+        fields = ('search', 'sub_unit', 'i_attribute', 'i_school', 'i_year', 'i_astrological_sign', 'i_blood')
 
 ############################################################
 ############################################################
@@ -136,6 +192,9 @@ class SIFEventFilterForm(MagiFiltersForm):
         model = models.SIFEvent
         fields = ('search', 'i_type', 'i_unit', 'version')
 
+############################################################
+# Song
+
 class SongForm(AutoForm):
 
     release = forms.forms.DateField(label=_('Release date'), required=False)
@@ -184,6 +243,9 @@ class SongFilterForm(MagiFiltersForm):
         ('master_notes', string_concat('MASTER - ', _('Notes'))),
     ]
 
+    sub_unit = SUB_UNIT_CHOICE_FIELD
+    sub_unit_filter = MagiFilter(to_queryset=sub_unit_to_queryset())
+
     available = forms.forms.NullBooleanField(initial=None, required=False, label=_('Currently available'))
     available_filter = MagiFilter(to_queryset=lambda form, queryset, request, value: queryset.filter(Q(b_side_start__lte=timezone.now(), b_side_end__gte=timezone.now) | Q(b_side_start=None, b_side_end=None, release__lte=timezone.now())))
 
@@ -193,6 +255,18 @@ class SongFilterForm(MagiFiltersForm):
     version = forms.forms.ChoiceField(label=_(u'Server availability'), choices=BLANK_CHOICE_DASH + models.Account.VERSION_CHOICES)
     version_filter = MagiFilter(to_queryset=lambda form, queryset, request, value: queryset.filter(c_versions__contains=value))
 
+    def _available_to_queryset(form, queryset, request, value):
+        if int(value) == 2:
+            return queryset.filter(Q(b_side_start__lte=timezone.now(), b_side_end__gte=timezone.now()) | Q(release__lte=timezone.now()))
+        elif int(value) == 3:
+            return queryset.filter(
+                Q(release=None) & (Q(b_side_start__gte=timezone.now()) | Q(b_side_end__lte=timezone.now(), release=None)) | Q(release__gte=timezone.now()) | Q(release=None)
+            )
+        return queryset
+
+    available = forms.forms.NullBooleanField(initial=None, required=False, label=_('Currently available'))
+    available_filter = MagiFilter(to_queryset=_available_to_queryset)
+
     def __init__(self, *args, **kwargs):
         super(SongFilterForm, self).__init__(*args, **kwargs)
         if 'version' in self.fields:
@@ -200,21 +274,69 @@ class SongFilterForm(MagiFiltersForm):
             
     class Meta:
         model = models.Song
-        fields = ('search', 'i_attribute', 'i_unit', 'i_subunit', 'location', 'version', 'available')
+        fields = ('search', 'sub_unit', 'i_attribute', 'i_unit', 'i_subunit', 'location', 'version', 'available')
+
+############################################################
+# Card
 
 class CardForm(AutoForm):
 
     release = forms.forms.DateField(label=_('Release date'), required=False)
-    
+
+    def __init__(self, *args, **kwargs):
+        super(CardForm, self).__init__(*args, **kwargs)
+        if 'c_versions' in self.fields:
+            self.fields['c_versions'].choices = [(name, verbose) for name, verbose in self.fields['c_versions'].choices if name not in ['KR', 'TW']]
+
     class Meta:
         model = models.Card
         save_owner_on_creation = True
         fields = '__all__'
 
 class CardFilterForm(MagiFiltersForm):
+    search_fields = ['card_id', 'name', 'details']
+
+    ordering_fields = [
+        ('release', _('Release date')),
+        ('id', 'ID'),
+        ('max_smile', _('Smile')),
+        ('max_pure', _('Pure')),
+        ('max_cool', _('Cool')),
+    ]
+
+    version = forms.forms.ChoiceField(label=_(u'Server availability'), choices=BLANK_CHOICE_DASH + models.Account.VERSION_CHOICES)
+    version_filter = MagiFilter(to_queryset=lambda form, queryset, request, value: queryset.filter(c_versions__contains=value))
+
+    idol_sub_unit = IDOL_SUB_UNIT_CHOICE_FIELD
+    idol_sub_unit_filter = MagiFilter(to_queryset=idol_sub_unit_to_queryset(prefix='idol__'))
+
+    def card_type_to_queryset(form, queryset, request, value):
+        if value == 'limited':
+            return queryset.filter(limited=True)
+        elif value == 'promo':
+            return queryset.filter(promo=True)
+        elif value == 'perm':
+            return queryset.filter(limited=False).filter(promo=False).filter(skill_type!='support')
+        return queryset
+
+    card_type = forms.forms.ChoiceField(label=_(u'Type'), choices=BLANK_CHOICE_DASH + [
+        ('perm', _(u'Permanent')),
+        ('limited', _(u'Limited')),
+        ('promo', _(u'Promo')),
+    ])
+    card_type_filter = MagiFilter(to_queryset=card_type_to_queryset)
+
+    def __init__(self, *args, **kwargs):
+        super(CardFilterForm, self).__init__(*args, **kwargs)
+        if 'version' in self.fields:
+            self.fields['version'].choices = [(name, verbose) for name, verbose in self.fields['version'].choices if name not in ['KR', 'TW']]
+
     class Meta:
         model = models.Card
-        fields = ('in_set', )
+        fields = ('search', 'idol_sub_unit', 'card_type', 'i_rarity', 'i_attribute', 'version', 'i_skill_type', 'i_center', 'i_group', 'in_set',)
+
+############################################################
+# Skill
 
 class SkillForm(AutoForm):
     class Meta:
@@ -222,8 +344,25 @@ class SkillForm(AutoForm):
         save_owner_on_creation = True
         fields = '__all__'
 
+class SkillFilterForm(MagiFiltersForm):
+    search_fields = ['name', 'details']
+
+    class Meta:
+        model = models.Skill
+        fields = ('search', 'i_skill_type', )
+
+############################################################
+# Set
+
 class SetForm(AutoForm):
     class Meta:
         model = models.Set
         save_owner_on_creation = True
         fields = '__all__'
+
+class SetFilterForm(MagiFiltersForm):
+    search_fields = ['title']
+
+    class Meta:
+        model = models.Set
+        fields = ('search', 'i_set_type', 'i_unit', )

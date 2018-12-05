@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
+from django.conf import settings as django_settings
 from django.utils.translation import ugettext_lazy as _, get_language
 from django.utils.formats import date_format
 from django.utils.safestring import mark_safe
 from django.utils.translation import string_concat
+from magi import settings
 from magi.item_model import getInfoFromChoices
 from magi.magicollections import (
     MagiCollection,
@@ -21,6 +23,7 @@ from magi.utils import (
     setSubField,
     jsv,
     mergedFieldCuteForm,
+    FAVORITE_CHARACTERS_IMAGES,
 )
 from sukutomo import forms, models
 from sukutomo.utils import (
@@ -104,6 +107,21 @@ IDOL_ORDER = [
 ]
 
 IDOLS_CUTEFORM = {
+    'i_unit': {
+    },
+    'i_subunit': {
+    },
+    'sub_unit': {
+        'to_cuteform': lambda k, v: (
+            staticImageURL(k, folder='i_unit', extension='png') if float(k) - 2 < 0 else
+            staticImageURL(int(k) - 2, folder='i_subunit', extension='png')
+            ),
+        'title': _('Unit'),
+        'extra_settings': {
+            'modal': 'true',
+            'modal-text': 'true',
+        },
+    },
     'i_attribute': {
     },
     'i_year': {
@@ -432,6 +450,17 @@ class SongCollection(MagiCollection):
             'transform': CuteFormTransform.Flaticon,
             'to_cuteform': lambda k, v: SongCollection._location_to_cuteform[k],
         },
+        'sub_unit': {
+            'to_cuteform': lambda k, v: (
+                staticImageURL(k, folder='i_unit', extension='png') if float(k) - 2 < 0 else
+                staticImageURL(int(k) - 2, folder='i_subunit', extension='png')
+                ),
+            'title': _('Unit'),
+            'extra_settings': {
+                'modal': 'true',
+                'modal-text': 'true',
+            },
+        }, 
     }
 
     def to_fields(self, view, item, *args, **kwargs):
@@ -613,8 +642,16 @@ class SongCollection(MagiCollection):
 CARD_AUTO_EXCLUDE = [
     'limited', 'promo', 'support', 'rate', 'i_dependency', 'chance',
     'number', 'length', 'i_center', 'i_group', 'boost_percent',
-    'smile_min', 'pure_min', 'cool_min', 'hp',
+    'smile_min', 'pure_min', 'cool_min', 'hp', 'i_skill_type',
 ] + models.Card.IDOLIZED_FIELDS + models.Card.UNIDOLIZED_FIELDS
+
+def _idol_sub_unit_to_cuteform(k):
+    if float(k) - 2 < 0:
+        return staticImageURL(k, folder='i_unit', extension='png')
+    elif float(k) - 10 < 0:
+        return staticImageURL(int(k) - 2, folder='i_subunit', extension='png')
+    else:
+        return FAVORITE_CHARACTERS_IMAGES[int(k) - 10]
 
 CARDS_CUTEFORM = {
     'i_unit': {
@@ -622,6 +659,10 @@ CARDS_CUTEFORM = {
     'i_subunit': {
         'image_folder': 'i_subunit',
         'title': _('Subunit'),
+    },
+    'idol_sub_unit': {
+        'to_cuteform': lambda k, v: _idol_sub_unit_to_cuteform(k),
+        'title': _('Unit'),
         'extra_settings': {
             'modal': 'true',
             'modal-text': 'true',
@@ -636,6 +677,45 @@ CARDS_CUTEFORM = {
         'image_folder': 'rarity_3',
         'title': _('Rarity'),
     },
+    'version': {
+        'to_cuteform': lambda k, v: EventCollection._version_images[k],
+        'image_folder': 'language',
+        'transform': CuteFormTransform.ImagePath,
+    },
+    'idol': {
+        'to_cuteform': lambda k, v: FAVORITE_CHARACTERS_IMAGES[k],
+        'title': _('Idol'),
+        'extra_settings': {
+                'modal': 'true',
+                'modal-text': 'true',
+            },
+    },
+    'skill': {
+        'transform': CuteFormTransform.FlaticonWithText, 
+        'extra_settings': {
+            'modal': 'true',
+            'modal-text': 'true',
+        },
+    },
+    'i_skill_type': {
+            'transform': CuteFormTransform.Flaticon,
+            'to_cuteform': lambda _k, _v: SKILL_TYPE_ICONS[models.Skill.get_reverse_i('skill_type', _k)],
+        },
+    'in_set': {
+        'transform': CuteFormTransform.FlaticonWithText, 
+        'extra_settings': {
+            'modal': 'true',
+            'modal-text': 'true',
+        },
+    },
+    'i_group': {
+        'transform': CuteFormTransform.Flaticon,
+        'to_cuteform': lambda k, v: CardCollection._center_boost_to_cuteform[models.Card.get_reverse_i('group', k)]
+    },
+    'card_type': {
+        'to_cuteform': lambda k, v: CardCollection._card_type_to_cuteform[k],
+        'transform': CuteFormTransform.Flaticon,
+    }
 }
 
 CARDS_ICONS = {
@@ -669,6 +749,18 @@ class CardCollection(MagiCollection):
     icon = 'deck'
     navbar_link_list = 'schoolidolfestival'
 
+    _center_boost_to_cuteform = {
+        'unit':'circles-grid',
+        'subunit':'share',
+        'year':'education',
+    }
+
+    _card_type_to_cuteform = {
+        'perm':'chest',
+        'limited':'hourglass',
+        'promo':'promo',
+    }
+    
     filter_cuteform = CARDS_CUTEFORM
 
     def to_fields(self, view, item, *args, **kwargs):
@@ -698,6 +790,14 @@ class CardCollection(MagiCollection):
             if extra_fields is None: extra_fields = []
             if exclude_fields is None: exclude_fields = []
             if order is None: order = []
+            
+            #Add ID Field
+            extra_fields.append(('id', {
+                'verbose_name': _(u'ID'),
+                'type': 'text',
+                'value': u'#{}'.format(item.id),
+                'icon': 'id',
+                }))
 
             # Add Idol field
             if item.idol:
@@ -752,7 +852,7 @@ class CardCollection(MagiCollection):
                 if item.rarity in ['UR', 'SSR']:
                     leader_second = _('plus {group} members\' {} pts. up by {}%')
                     if item.group is not 0 and item.boost_percent is not None:
-                        for gvariable, ggvariable in models.Card.GROUP_BOOST:
+                        for gvariable, ggvariable in models.Card.GROUP_CHOICES:
                             if ggvariable is item.t_group:
                                 if item.t_group is not _('Unit'):
                                     og = leader_second
@@ -839,6 +939,43 @@ class CardCollection(MagiCollection):
         item_template = custom_item_template
         per_line = 3
         default_ordering = '-release,-card_id'
+        ajax_pagination_callback = 'loadCardList'
+
+        def get_queryset(self, queryset, parameters, request):
+            queryset = super(CardCollection.ListView, self).get_queryset(queryset, parameters, request)
+            if request.GET.get('ordering', None) in ['max_smile', 'max_pure', 'max_cool']:
+                queryset = queryset.extra(select={
+                    'max_smile': 'CASE WHEN smile_max_idol NOT NULL THEN smile_max_idol WHEN smile_max NOT NULL THEN smile_max WHEN smile_min NOT NULL THEN smile_min END',
+                    'max_pure': 'CASE WHEN pure_max_idol NOT NULL THEN pure_max_idol WHEN pure_max NOT NULL THEN pure_max WHEN pure_min NOT NULL THEN pure_min END',
+                    'max_cool': 'CASE WHEN cool_max_idol NOT NULL THEN cool_max_idol WHEN cool_max NOT NULL THEN cool_max WHEN cool_min NOT NULL THEN cool_min END',
+                })
+            return queryset
+
+        def ordering_fields(self, item, only_fields=None, *args, **kwargs):
+            fields = super(CardCollection.ListView, self).ordering_fields(item, *args, only_fields=only_fields, **kwargs)
+            if 'max_smile' in only_fields:
+                fields['max_smile'] = {
+                    'verbose_name':  _('Smile'),
+                    'value': item.smile_max_idol or item.smile_max or item.smile_min or '???',
+                    'type': 'text',
+                    'image': staticImageURL('0', folder='i_attribute', extension='png'),
+                }
+            if 'max_pure' in only_fields:
+                fields['max_pure'] = {
+                    'verbose_name':  _('Pure'),
+                    'value': item.pure_max_idol or item.pure_max or item.pure_min or '???',
+                    'type': 'text',
+                    'image': staticImageURL('1', folder='i_attribute', extension='png'),
+                }
+            if 'max_cool' in only_fields:
+                fields['max_cool'] = {
+                    'verbose_name':  _('Cool'),
+                    'value': item.cool_max_idol or item.cool_max or item.cool_min or '???',
+                    'type': 'text',
+                    'image': staticImageURL('2', folder='i_attribute', extension='png'),
+                }
+
+            return fields
 
     class AddView(MagiCollection.AddView):
         staff_required = True
@@ -851,6 +988,12 @@ class CardCollection(MagiCollection):
 
 ############################################################
 # Skill Collection
+
+SKILL_TYPE_ICONS = {
+    'score':'scoreup', 'pl':'perfectlock',
+    'heal':'healer', 'stat':'statistics',
+    'support':'megaphone',
+}
 
 class SkillCollection(MagiCollection):
     queryset = models.Skill.objects.all()
@@ -865,8 +1008,13 @@ class SkillCollection(MagiCollection):
     navbar_link = False
     permissions_required = ['manage_main_items']
 
-    filter_cuteform = CARDS_CUTEFORM
-
+    filter_cuteform = {
+        'i_skill_type': {
+            'transform': CuteFormTransform.Flaticon,
+            'to_cuteform': lambda _k, _v: SKILL_TYPE_ICONS[models.Skill.get_reverse_i('skill_type', _k)],
+        },
+    }
+    
     def to_fields(self, view, item, *args, **kwargs):
     
         fields = super(SkillCollection, self).to_fields(view, item, *args,
@@ -875,7 +1023,7 @@ class SkillCollection(MagiCollection):
         return fields
 
     class ListView(MagiCollection.ListView):
-        #filter_form = forms.SkillFilterForm
+        filter_form = forms.SkillFilterForm
         item_template = custom_item_template
         per_line = 6
 
@@ -903,8 +1051,19 @@ class SetCollection(MagiCollection):
     icon = 'scout-box'
     navbar_link_list = 'schoolidolfestival'
 
+    _set_type_icons = { 'gacha':'scout-box', 'event':'event' }
+
+    filter_cuteform = {
+        'i_unit': {
+        },
+        'i_set_type': {
+            'transform': CuteFormTransform.Flaticon,
+            'to_cuteform': lambda k, v: SetCollection._set_type_icons[models.Set.get_reverse_i('set_type', k)],
+        },
+    }
+
     class ListView(MagiCollection.ListView):
-        #filter_form = forms.SetFilterForm
+        filter_form = forms.SetFilterForm
         item_template = custom_item_template
         per_line = 4
 
