@@ -5,8 +5,8 @@ from magi.utils import mergedFieldCuteForm, staticImageURL
 
 def generateDifficulty(rating, notes):
     string = _('{} &#9734 rating').format(rating) if rating != None else ''
-    string+='<br />' if string != '' else ''
-    string+=_('{} notes').format(notes) if notes != None else ''
+    string += '<br />' if string != '' else ''
+    string += _('{} notes').format(notes) if notes != None else ''
     return string
 
 def subUnitMergeCuteForm(cuteform):

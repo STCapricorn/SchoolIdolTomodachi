@@ -9,6 +9,7 @@ from magi.item_model import getInfoFromChoices
 from magi.magicollections import MagiCollection, AccountCollection as _AccountCollection, PrizeCollection as _PrizeCollection, StaffConfigurationCollection as _StaffConfigurationCollection
 from magi.utils import staticImageURL, CuteFormType, CuteFormTransform, custom_item_template, toCountDown, torfc2822, setSubField, jsv, FAVORITE_CHARACTERS_IMAGES
 from sukutomo import forms, models
+from sukutomo.django_translated import t
 from sukutomo.utils import generateDifficulty, subUnitMergeCuteForm
 
 ############################################################
@@ -332,12 +333,24 @@ class EventCollection(MagiCollection):
 
 SONG_FIELDS_PER_DIFFICULTY = ['notes', 'difficulty']
 
+SONG_EXCLUDE = [
+    'title', 'romaji', 'cover', 'i_attribute', 'i_unit', 'i_subunit',
+    'c_locations', 'b_side_master', 'master_swipe',
+]
+
+SONG_ORDER = [
+    'itunes_id', 'length', 'bpm', 'c_versions', 'availability',
+    'unlock', 'daily', 'b_side_countdown', 'b_side_start',
+    'b_side_end', 'easy', 'normal', 'hard', 'expert',
+    'master', 'songwriters', 'release',
+]
+
 SONG_ICONS = {
-    'title': 'song', 'romaji':' song', 'versions': 'world', 'locations': 'world',
-    'unlock': 'unlock', 'daily': 'trade', 'b_side_start': 'date',
-    'b_side_end': 'date', 'release': 'date', 'itunes_id': 'play',
-    'length': 'times','bpm': 'hp', 'master_swipe': 'index',
-    'b-side': 'times',
+    'title': 'song', 'versions': 'world', 'locations': 'world',
+    'unlock': 'unlock', 'daily': 'trade', 'b-side': 'times',
+    'b_side_start': 'date', 'b_side_end': 'date',
+    'release': 'date', 'itunes_id': 'play', 'length': 'times',
+    'bpm': 'hp', 'master_swipe': 'index',
 }
 
 SONG_CUTEFORM = {
@@ -385,7 +398,7 @@ class SongCollection(MagiCollection):
 
     def to_fields(self, view, item, *args, **kwargs):
 
-        fields = super(SongCollection, self).to_fields(view, item, *args, icons=SONG_ICONS,  images={
+        fields = super(SongCollection, self).to_fields(view, item, *args, icons=SONG_ICONS, images={
                 'attribute': staticImageURL(item.i_attribute, folder='i_attribute', extension='png'),
                 'unit': staticImageURL(item.i_unit, folder='i_unit', extension='png'),
                 'subunit': staticImageURL(item.i_subunit, folder='i_subunit', extension='png'),
@@ -395,11 +408,19 @@ class SongCollection(MagiCollection):
         setSubField(fields, 'b_side_end', key='timezones', value=['Asia/Tokyo', 'Local time'])
         setSubField(fields, 'release', key='timezones', value=['Asia/Tokyo', 'Local time'])
         setSubField(fields, 'length', key='value', value=lambda f: item.length_in_minutes)
+
+        setSubField(fields, 'romaji', key='verbose_name', value=_('Title'))
+        setSubField(fields, 'romaji', key='verbose_name_subtitle', value=_('Romaji'))
+        setSubField(fields, 'romaji', key='icon', value='song')
+        setSubField(fields, 'title', key='value', value=item.title)
+        setSubField(fields, 'title', key='type', value='text_annotation')
+        setSubField(fields, 'title', key='annotation', value=item.t_title if item.t_title is not item.title else '')
+        
         for _difficulty, tl in models.Song.DIFFICULTIES:
             setSubField(fields, '{}_notes'.format(_difficulty), key='icon', value='combo')
             setSubField(fields, '{}_rating'.format(_difficulty), key='image', value=staticImageURL(
                 getattr(item, '{}_rating'.format(_difficulty)) if 0<getattr(item, '{}_rating'.format(_difficulty))<14 else 0,
-                folder='stars', extension='png'))
+                folder='stars', extension='png'))           
 
         return fields
 
@@ -411,30 +432,31 @@ class SongCollection(MagiCollection):
             if exclude_fields is None: exclude_fields = []
             if order is None: order = []              
 
-            values = u' '
+            # Songwriters
+            values = []
             for fieldName, verbose_name in models.Song.SONGWRITERS:
                 value = getattr(item, fieldName)
                 exclude_fields.append(fieldName)
                 if value:
-                    values+=u'<b>{}:</b> {}<br />'.format(verbose_name, value)
-            if values and values is not u' ':
+                    values.append(mark_safe(u'<b>{}: </b> {}<br />'.format(verbose_name, value)))
+            if len(values) > 0:
                 extra_fields.append(('songwriters', {
                     'verbose_name': _('Songwriters'),
-                    'type': 'html',
-                    'value': mark_safe(u'<div class="songwriters-details">{}</div>'.format(values)),
+                    'type': 'list',
+                    'value': values,
                     'icon': 'author',
-                    }))                
-  
-            status = getattr(item, 'status')
-            if status and status != 'ended':
+                }))                
+
+            # B-Side
+            if item.status and item.status != 'ended':
                 start_date = getattr(item, 'b_side_start')
                 end_date = getattr(item, 'b_side_end')
                 extra_fields += [
                     ('b_side_countdown', {
                         'verbose_name': _('B-Side'),
                         'value': mark_safe(toCountDown(
-                            date=end_date if status == 'current' else start_date,
-                            sentence=_('{time} left') if status == 'current' else _('Starts in {time}'),
+                            date=end_date if item.status == 'current' else start_date,
+                            sentence=_('{time} left') if item.status == 'current' else _('Starts in {time}'),
                             classes=['fontx1-5'],
                         )),                  
                         'icon': 'hourglass',
@@ -444,7 +466,7 @@ class SongCollection(MagiCollection):
             else:   
                 exclude_fields += ['b_side_start', 'b_side_end']
 
-            #Currently available
+            # Currently available
             extra_fields += [
                 ('availability', {
                     'verbose_name': _('Currently available'),
@@ -454,7 +476,7 @@ class SongCollection(MagiCollection):
                 }),
             ]
 
-            #Difficulty info
+            # Difficulty
             for difficulty, d_verbose in models.Song.DIFFICULTIES:
                 rating = getattr(item, u'{}_rating'.format(difficulty))
                 notes = getattr(item, u'{}_notes'.format(difficulty))
@@ -466,16 +488,11 @@ class SongCollection(MagiCollection):
                         'type': 'html',
                         'value': mark_safe(generateDifficulty(rating, notes)),
                     }))
-                exclude_fields.append(difficulty)
-                exclude_fields.append(u'{}_rating'.format(difficulty))
-                exclude_fields.append(u'{}_notes'.format(difficulty))
+                exclude_fields += [difficulty, u'{}_rating'.format(difficulty), u'{}_notes'.format(difficulty)]
 
-            exclude_fields+=['title', 'romaji', 'cover', 'i_attribute', 'i_unit', 'i_subunit',
-                'c_locations', 'b_side_master', 'master_swipe']
+            exclude_fields += SONG_EXCLUDE
 
-            order = ['itunes_id', 'length', 'bpm', 'c_versions', 'availability', 'unlock',
-                     'daily', 'b_side_countdown', 'b_side_start', 'b_side_end', 'easy', 'normal', 'hard', 'expert',
-                     'master', 'songwriters', 'release'] + order
+            order = SONG_ORDER + order
 
             fields = super(SongCollection.ItemView, self).to_fields(
                 item, *args, order=order, extra_fields=extra_fields, exclude_fields=exclude_fields, **kwargs)

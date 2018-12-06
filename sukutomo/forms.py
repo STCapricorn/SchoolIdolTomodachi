@@ -233,7 +233,6 @@ class SongFilterForm(MagiFiltersForm):
     ordering_fields = [
         ('release', _('Release date')),
         ('title', _('Title')),
-        ('japanese_title', string_concat(_('Title'), ' (', _('Japanese'), ')')),
         ('romaji', string_concat(_('Title'), ' (', _('Romaji'), ')')),
         ('length', _('Length')),
         ('bpm', _('Beats per minute')),
