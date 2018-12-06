@@ -150,9 +150,7 @@ class EventForm(AutoForm):
                 field_name = u'{version}_{timing}_date'.format(version=version.lower(), timing=timing)
                 date = getattr(instance, field_name, None)
                 if date:
-                    setattr(instance, field_name, date.replace(
-                        hour=int(models.Event.TIMES_PER_VERSION[version][timing]['hour']),
-                        minute=int(models.Event.TIMES_PER_VERSION[version][timing]['minute'])))
+                    setattr(instance, field_name, date.replace(**models.Event.TIMES_PER_VERSION[version][timing]))
                     
         if commit:
             instance.save()
@@ -203,9 +201,7 @@ class SongForm(AutoForm):
         for field in ['release', 'b_side_start', 'b_side_end']:
             date = getattr(instance, field, None)
             if date:
-                setattr(instance, field, date.replace(
-                    hour=int(models.Song.DATE_TIMES[field]['hour']),
-                    minute=int(models.Song.DATE_TIMES[field]['minute'])))
+                setattr(instance, field, date.replace(**models.Song.DATE_TIMES[field]))
                 
         # Remove B-Side When Ended
         status = getattr(instance, 'status')

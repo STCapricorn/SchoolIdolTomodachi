@@ -368,9 +368,9 @@ class Song(MagiModel):
 
     DATE_TIMES = {
         _field: {
-            _unit: django_settings.STAFF_CONFIGURATIONS.get('song_{field}_{unit}'.format(
+            _unit: long(django_settings.STAFF_CONFIGURATIONS.get('song_{field}_{unit}'.format(
                     field=_field, unit=_unit,
-                ), 0) for _unit in ['hour', 'minute']
+                ), 0)) for _unit in ['hour', 'minute']
         } for _field in ['release', 'b_side_start', 'b_side_end']
     }
 
@@ -456,9 +456,9 @@ class Event(MagiModel):
     TIMES_PER_VERSION = {
         _version: {
             _timing: {
-                _unit: django_settings.STAFF_CONFIGURATIONS.get('event_{version}_{timing}_{unit}'.format(
+                _unit: long(django_settings.STAFF_CONFIGURATIONS.get('event_{version}_{timing}_{unit}'.format(
                         version=_version, timing=_timing, unit=_unit,
-                    ), 0) for _unit in ['hour', 'minute']
+                    ), 0)) for _unit in ['hour', 'minute']
             } for _timing in ['start', 'end']
         } for _version in Account.VERSIONS.keys()
     }
